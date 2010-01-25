@@ -1,0 +1,30 @@
+ADOdb Database Abstraction Library for PHP (and Python).
+===============================================================================
+HomePage   : http://phplens.com/phpeverywhere/
+SourceForge: http://adodb.sourceforge.net/
+
+Minimum Install
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  See: ADOdb Library for PHP Manual::Installation Guide
+  V4.50 6 July 2004 (c) 2000-2004 John Lim (jlim#natsoft.com)
+
+For developers who want to release a minimal install of ADOdb, you will need:
+ adodb.inc.php
+ adodb-lib.inc.php
+ adodb-time.inc.php
+ drivers/adodb-$database.inc.php
+ license.txt (for legal reasons)
+ adodb-php4.inc.php
+ adodb-iterator.inc.php
+
+Optional:
+ adodb-error.inc.php and lang/adodb-$lang.inc.php (if you use MetaError())
+ adodb-csvlib.inc.php (if you use cached recordsets - CacheExecute(), etc)
+ adodb-exceptions.inc.php and adodb-errorhandler.inc.php (if you use adodb error
+  handler or php5 exceptions).
+
+
+phpGACL (PHP Generic Access Control List):
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+adodb-pager.inc.php
+

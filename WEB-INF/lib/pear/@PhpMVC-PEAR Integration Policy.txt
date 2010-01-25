@@ -1,0 +1,14 @@
+
+PROPOSED Php.MVC/PEAR Integration Policy
+
+A) Bundled PEAR libs (developer convenience only)
+	We load all necessary classes (global prepend)
+	Comment-out all bundled PEAR include/require statements
+
+
+B) External PEAR libs (recommended for production servers)
+	Developers maintain external libraries as required
+	Developer may need to set the path to the External PEAR libs
+	in the php.ini or global_paths or app_level_paths.
+	
+---~~~---

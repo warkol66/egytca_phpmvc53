@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+
+<!DOCTYPE phpmvc-config PUBLIC "-//PHPMVC//DTD PHPMVC Configuration 1.0//EN"
+          "../../../phpmvc-config_1_1.dtd">
+
+
+<phpmvc-config>
+
+  <!-- ========== Form Bean Definitions =================================== -->
+
+  <!-- Example form bean -->
+  <form-beans>
+
+  </form-beans> 
+
+  <!-- ========== Action Mapping Definitions ============================== -->
+  <action-mappings>
+
+    <!-- Example1: regular Action process -->
+    <action    path = "testRegularAction"
+               type = "ActionChainsRegularAction"
+              scope = "request">
+              
+       <forward 
+           name     ="regularActionPath" 
+           path     ="ActionChainsTestPage01.php"/>     
+    </action>
+
+
+    <!-- Example2: Action-to-Action chaining process -->
+    <action    path = "testAct2ActAction01"
+               type = "Act2ActChainAction01"
+              scope = "request">
+
+       <!-- Note: No static resource 'path' defined for this first Action    -->
+       <!-- 'path' is a required attribute, so we just set it to ""           --> 
+       <forward 
+           name     ="nextActionPath" 
+           path     =""
+           nextActionPath ="testAct2ActAction02"/>     
+    </action>
+
+    <action    path = "testAct2ActAction02"
+               type = "Act2ActChainAction02"
+              scope = "request">
+
+       <!-- Here we have a 'path' to a page resource, but no path to another -->
+       <!--    Action in the action chain.                                   -->
+       <forward 
+           name     ="lastActionPath" 
+           path     ="ActionChainsTestPage02.php"/>     
+    </action>
+
+  </action-mappings>
+  
+</phpmvc-config>

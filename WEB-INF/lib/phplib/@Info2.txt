@@ -1,0 +1,33 @@
+
+phpLIB (v. 7.4-pre1 4 Jan 2002)
+========================
+http://sourceforge.net/projects/phplib/
+
+
+Manual
+  www.sanisoft.com/phplib/manual/
+
+
+Add-ons/Patches
+=======================
+
+WYSIWYG HTML
+~~~~~~~~~~~~~~~~~~~~~~~
+An addon to the OOH Forms Library is released. It is a WYSIWYG HTML 
+Editor which can be used as a form element. Download it here :-
+http://www.sanisoft.com/ofwysiwyg/index.php3
+
+register_globals off patch
+~~~~~~~~~~~~~~~~~~~~~~~
+The following file contains patct for OOHForms to work with 
+register_globals off
+http://www.sanisoft.com/phplib/oohforms_patch.zip
+
+Custom calendar element for OOH forms
+~~~~~~~~~~~~~~~~~~~~~~~
+Download a custom calendar element for OOH forms from 
+http://www.sanisoft.com/ofcal
+
+
+
+

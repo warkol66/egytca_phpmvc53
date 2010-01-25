@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+	<root root_attrib1="xyz" root_attrib2="dummy">
+		ROOT BODY
+		<alpha alpha_attrib1="my-alpha01" alpha_attrib2="my-alpha02">
+			ALPHA BODY
+		</alpha>
+		<beta beta_attrib1="my-beta01" beta_attrib2="my-beta02">
+			BETA BODY
+		</beta>
+		<gamma	gamma_attrib1="my-gamma01" 
+					gamma_attrib2="my-gamma02">
+			GAMMA BODY 
+		</gamma>
+
+		<star serverName="Darkstar">
+			<set-property property="host" value="darkstar1"/>
+			<set-property property="port" value="2010"/>
+		</star>
+
+	</root>

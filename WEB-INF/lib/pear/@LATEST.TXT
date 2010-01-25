@@ -1,0 +1,4 @@
+
+PEAR-1.4.6
+DB-1.7.6
+HTTP_Upload-0.9.1

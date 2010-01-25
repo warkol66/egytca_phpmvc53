@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+
+<!DOCTYPE phpmvc-config PUBLIC "-//PHPMVC//DTD PHPMVC Configuration 1.0//EN"
+          "../../../phpmvc-config_1_1.dtd">
+
+
+<phpmvc-config>
+
+  <!-- ========== Form Bean Definitions =================================== -->
+
+  <!-- Example form bean -->
+  <form-beans>
+    <form-bean name="testForm" 
+    				type="TestForm"/>				
+
+  </form-beans> 
+
+  <!-- ========== Action Mapping Definitions ============================== -->
+  <action-mappings>
+
+    <!-- Example ForwardAction -->
+    <!-- When we don't need a specific Action handler class -->
+    <!-- Note the URI target 'parameter = "myPage.php"'  -->
+    <action    path = "testForwardAction"
+               type = "ForwardAction"
+               name = "testForm"
+              scope = "request"
+          parameter = "myPage.php">
+    </action>
+
+    <!-- Example DispatchAction -->
+    <!-- Note  -->
+    <action    path = "testDispatchAction"
+               type = "TestDispatchAction"
+               name = "testForm"
+              scope = "request"
+              input = "retryPage.php"
+          parameter = "submit">
+		<forward name = "success" path="welcomePage.php"/>
+		<forward name = "failure" path="stdLogon.php" redirect="true"/>
+    </action>
+
+    <!-- Example LookupDispatchAction -->
+    <!-- Note  -->
+    <action    path = "testLookupDispatchAction"
+               type = "TestLookupDispatchAction"
+               name = "testForm"
+              scope = "request"
+              input = "retryPage.php"
+          parameter = "submit">
+		<forward name = "success" path="welcomePage.php"/>
+		<forward name = "failure" path="stdLogon.php" redirect="true"/>
+    </action>
+
+  </action-mappings>
+</phpmvc-config>

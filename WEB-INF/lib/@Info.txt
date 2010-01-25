@@ -1,0 +1,10 @@
+
+WEB-INF/lib/
+  - collections
+  - database
+  - digester
+  - logging
+  - phplib
+  - utils
+  - validator
+

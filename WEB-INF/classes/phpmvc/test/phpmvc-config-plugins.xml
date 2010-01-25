@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+
+<!DOCTYPE phpmvc-config PUBLIC "-//PHPMVC//DTD PHPMVC Configuration 1.0//EN"
+          "../../../phpmvc-config_1_1.dtd">
+
+
+<phpmvc-config>
+
+  <!-- ========== PlugIns ================================================= -->
+
+  <!-- Load our PlugIn class here (case sensitive class name)               -->
+  <!-- Note: The attribute names must match the class methods               -->
+  <!-- Eg: 'key' maps to 'setKey(..)'                                       -->
+
+  <plug-in className="PlugInTestDriverA" key="TEST_PLUGIN_A">
+    <!-- And set some custom propertied on the PlugIn class                 -->
+    <!-- Note: The property name must match the class variable name exactly -->
+    <set-property property="propA1"  value="Class-A-1001"/>
+    <set-property property="propA2"  value="Class-A-1002"/>
+  </plug-in>
+ 
+  <plug-in className="PlugInTestDriverB" key="TEST_PLUGIN_B">
+    <!-- And set some custom propertied on the PlugIn class                 -->
+    <!-- Note: The property name must match the class variable name exactly -->
+    <set-property property="propB1"  value="Class-B-2001"/>
+    <set-property property="propB2"  value="Class-B-2002"/>
+  </plug-in>
+
+</phpmvc-config>
