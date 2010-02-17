@@ -1,8 +1,8 @@
 <?php
 /**
- * $Header: /repository/pear/Log/Log/file.php,v 1.45 2006/01/11 07:56:37 jon Exp $
+ * $Header$
  *
- * @version $Revision: 1.45 $
+ * @version $Revision: 224513 $
  * @package Log
  */
 
@@ -250,7 +250,11 @@ class Log_file extends Log
      */
     function flush()
     {
-        return fflush($this->_fp);
+        if (is_resource($this->_fp)) {
+            return fflush($this->_fp);
+        }
+
+        return false;
     }
 
     /**
