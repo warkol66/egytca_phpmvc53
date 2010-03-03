@@ -1,7 +1,7 @@
 <?php
 
 /*
- *  $Id: PropelArrayFormatter.php 1530 2010-02-05 17:05:09Z francois $
+ *  $Id: PropelArrayFormatter.php 1585 2010-02-26 08:28:11Z francois $
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -25,7 +25,7 @@
  * format() returns a PropelArrayCollection of associative arrays
  *
  * @author     Francois Zaninotto
- * @version    $Revision: 1530 $
+ * @version    $Revision: 1585 $
  * @package    propel.runtime.formatter
  */
 class PropelArrayFormatter extends PropelFormatter
@@ -35,16 +35,33 @@ class PropelArrayFormatter extends PropelFormatter
 	public function format(PDOStatement $stmt)
 	{
 		$this->checkCriteria();
-		$class = $this->collectionName;
-		if(class_exists($class)) {
+		if($class = $this->collectionName) {
 			$collection = new $class();
-			$collection->setModel($this->getCriteria()->getModelName());
+			$collection->setModel($this->class);
 			$collection->setFormatter($this);
 		} else {
 			$collection = array();
 		}
-		while ($row = $stmt->fetch(PDO::FETCH_NUM)) {
-			$collection[] = $this->getStructuredArrayFromRow($row);
+		if ($this->getCriteria()->isWithOneToMany()) {
+			$pks = array();
+			while ($row = $stmt->fetch(PDO::FETCH_NUM)) {
+				$key = call_user_func(array($this->peer, 'getPrimaryKeyHashFromRow'), $row);
+				$object = $this->getStructuredArrayFromRow($row);
+				if (!array_key_exists($key, $collection)) {
+					$collection[$key] = $object;
+				} else {
+					foreach ($object as $columnKey => $value) {
+						if(is_array($value)) {
+							$collection[$key][$columnKey][] = $value[0];
+						}
+					}
+				}
+			}
+			$collection->setData(array_values($collection->getArrayCopy()));
+		} else {
+			while ($row = $stmt->fetch(PDO::FETCH_NUM)) {
+				$collection[] =  $this->getStructuredArrayFromRow($row);
+			}
 		}
 		$this->currentObjects = array();
 		$stmt->closeCursor();
@@ -99,7 +116,12 @@ class PropelArrayFormatter extends PropelFormatter
 					$arrayToAugment = &$arrayToAugment[$prevJoin->getRelationMap()->getName()];
 				}
 			}
-			$arrayToAugment[$join->getRelationMap()->getName()] = $secondaryObjectArray;
+			$relation = $join->getRelationMap();
+			if ($relation->getType() == RelationMap::ONE_TO_MANY) {
+				$arrayToAugment[$join->getRelationMap()->getName().'s'][] = $secondaryObjectArray;
+			} else {
+				$arrayToAugment[$join->getRelationMap()->getName()] = $secondaryObjectArray;
+			}
 		}
 		foreach ($this->getCriteria()->getAsColumns() as $alias => $clause) {
 			$mainObjectArray[$alias] = $row[$col];

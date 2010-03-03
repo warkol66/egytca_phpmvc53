@@ -1,6 +1,6 @@
 <?php
 /*
- *  $Id: ModelCriteria.php 1550 2010-02-15 17:48:10Z francois $
+ *  $Id: ModelCriteria.php 1591 2010-03-02 20:57:59Z francois $
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -27,7 +27,7 @@
  * Using a model name and tablemaps, a ModelCriteria can do more powerful things than a simple Criteria
  *
  * @author     François Zaninotto
- * @version    $Revision: 1550 $
+ * @version    $Revision: 1591 $
  * @package    propel.runtime.query
  */
 class ModelCriteria extends Criteria
@@ -148,7 +148,7 @@ class ModelCriteria extends Criteria
 	 * $c->setFormatter(ModelCriteria::FORMAT_ARRAY);
 	 * </code>
 	 *
-	 * @param     mixed $formatter a formatter class name, or a formatter instance
+	 * @param     string|PropelFormatter $formatter a formatter class name, or a formatter instance
 	 * @return    ModelCriteria The current object, for fluid interface
 	 */
 	public function setFormatter($formatter)
@@ -480,24 +480,25 @@ class ModelCriteria extends Criteria
 		// relation looks like '$leftName.$relationName $relationAlias'
 		list($fullName, $relationAlias) = self::getClassAndAlias($relation);
 		if (strpos($fullName, '.') === false) {
-			$tableMap = $this->getTableMap();
+			// simple relation name, refers to the current table
 			$leftName = $this->getModelAliasOrName();
 			$relationName = $fullName;
 			$previousJoin = null;
+			$tableMap = $this->getTableMap();
 		} else {
 			list($leftName, $relationName) = explode('.', $fullName);
 			// find the TableMap for the left table using the $leftName
 			if ($leftName == $this->getModelAliasOrName()) {
 				$previousJoin = null;
 				$tableMap = $this->getTableMap();
-			} elseif (array_key_exists($leftName, $this->joins)) {
+			} elseif (isset($this->joins[$leftName])) {
 				$previousJoin = $this->joins[$leftName];
 				$tableMap = $previousJoin->getTableMap();
 			} else {
 				throw new PropelException('Unknown table or alias ' . $leftName);
 			}
 		}
-		$leftTableAlias = array_key_exists($leftName, $this->aliases) ? $leftName : null;
+		$leftTableAlias = isset($this->aliases[$leftName]) ? $leftName : null;
 		
 		// find the RelationMap in the TableMap using the $relationName
 		if(!$tableMap->hasRelation($relationName)) {
@@ -588,7 +589,7 @@ class ModelCriteria extends Criteria
 	 */
 	public function with($relation)
 	{
-		if (!array_key_exists($relation, $this->joins)) {
+		if (!isset($this->joins[$relation])) {
 			throw new PropelException('Unknown relation name or alias ' . $relation);
 		}
 		$join = $this->joins[$relation];
@@ -664,7 +665,7 @@ class ModelCriteria extends Criteria
 	 */
 	public function useQuery($relationName, $secondaryCriteriaClass = null)
 	{
-		if (!array_key_exists($relationName, $this->joins)) {
+		if (!isset($this->joins[$relationName])) {
 			throw new PropelException('Unknown class or alias ' . $name);
 		}
 		$className = $this->joins[$relationName]->getTableMap()->getPhpName();
@@ -690,7 +691,7 @@ class ModelCriteria extends Criteria
 	 */
 	public function endUse()
 	{
-		if (array_key_exists($this->modelAlias, $this->aliases)) {
+		if (isset($this->aliases[$this->modelAlias])) {
 			unset($this->aliases[$this->modelAlias]);
 		}
 		$primaryCriteria = $this->getPrimaryCriteria();
@@ -911,6 +912,8 @@ class ModelCriteria extends Criteria
 	
 	protected function getSelectStatement($con = null)
 	{
+		$dbMap = Propel::getDatabaseMap($this->getDbName());
+		$db = Propel::getDB($this->getDbName());
 	  if ($con === null) {
 			$con = Propel::getConnection($this->getDbName(), Propel::CONNECTION_READ);
 		}
@@ -925,7 +928,11 @@ class ModelCriteria extends Criteria
 		$con->beginTransaction();
 		try {
 			$criteria->basePreSelect($con);
-			$stmt = BasePeer::doSelect($criteria, $con);
+			$params = array();
+			$sql = BasePeer::createSelectSql($criteria, $params);
+			$stmt = $con->prepare($sql);
+			BasePeer::populateStmtValues($stmt, $params, $dbMap, $db);
+			$stmt->execute();
 			$con->commit();
 		} catch (PropelException $e) {
 			$con->rollback();
@@ -949,7 +956,8 @@ class ModelCriteria extends Criteria
 	 */
 	public function findBy($column, $value, $con = null)
 	{
-		$this->filterBy($column, $value);
+		$method = 'filterBy' . $column;
+		$this->$method($value);
 
 		return $this->find($con);
 	}
@@ -992,7 +1000,8 @@ class ModelCriteria extends Criteria
 	 */
 	public function findOneBy($column, $value, $con = null)
 	{
-		$this->filterBy($column, $value);
+		$method = 'filterBy' . $column;
+		$this->$method($value);
 
 		return $this->findOne($con);
 	}
@@ -1448,7 +1457,7 @@ EOT;
 		if ($class == $this->getModelAliasOrName()) {
 			// column of the Criteria's model
 			$tableMap = $this->getTableMap();
-		} elseif (array_key_exists($class, $this->joins)) {
+		} elseif (isset($this->joins[$class])) {
 			// column of a relations's model
 			$tableMap = $this->joins[$class]->getTableMap();
 		} else {
@@ -1461,7 +1470,7 @@ EOT;
 		
 		if ($tableMap->hasColumnByPhpName($phpName)) {
 			$column = $tableMap->getColumnByPhpName($phpName);
-			if (array_key_exists($class, $this->aliases)) {
+			if (isset($this->aliases[$class])) {
 				$this->currentAlias = $class;
 				$realColumnName = $class . '.' . $column->getName();
 			} else {
@@ -1531,6 +1540,48 @@ EOT;
 	{
 		$key = $this->getAliasedColName($p1);
 		return $this->containsKey($key) ? $this->addAnd($key, $value, $comparison) : $this->add($key, $value, $comparison);
+	}
+	
+	/**
+	 * Get all the parameters to bind to this criteria
+	 * Does part of the job of BasePeer::createSelectSql() for the cache
+	 *
+	 * @return    array list of parameters, each parameter being an array like
+	 *                  array('table' => $realtable, 'column' => $column, 'value' => $value)
+	 */
+	public function getParams()
+	{
+		$params = array();
+		$dbMap = Propel::getDatabaseMap($this->getDbName());
+
+		foreach ($this->getMap() as $criterion) {
+
+			$table = null;
+			foreach ($criterion->getAttachedCriterion() as $attachedCriterion) {
+				$tableName = $attachedCriterion->getTable();
+
+				$table = $this->getTableForAlias($tableName);
+				if (null === $table) {
+					$table = $tableName;
+				}
+
+				if (($this->isIgnoreCase() || $attachedCriterion->isIgnoreCase())
+				&& $dbMap->getTable($table)->getColumn($attachedCriterion->getColumn())->isText()) {
+					$attachedCriterion->setIgnoreCase(true);
+				}
+			}
+
+			$sb = '';
+			$criterion->appendPsTo($sb, $params);
+		}
+
+		$having = $this->getHaving();
+		if ($having !== null) {
+			$sb = '';
+			$having->appendPsTo($sb, $params);
+		}
+
+		return $params;
 	}
 
 	/**

@@ -1,7 +1,7 @@
 <?php
 
 /*
- *  $Id: DatabaseMap.php 1347 2009-12-03 21:06:36Z francois $
+ *  $Id: DatabaseMap.php 1582 2010-02-25 11:42:40Z francois $
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -33,7 +33,7 @@
  * @author     Hans Lellelid <hans@xmpl.org> (Propel)
  * @author     John D. McNally <jmcnally@collab.net> (Torque)
  * @author     Daniel Rall <dlr@collab.net> (Torque)
- * @version    $Revision: 1347 $
+ * @version    $Revision: 1582 $
  * @package    propel.runtime.map
  */
 class DatabaseMap
@@ -120,7 +120,7 @@ class DatabaseMap
     if ( strpos($name, '.') > 0) {
       $name = substr($name, 0, strpos($name, '.'));
     }
-    return isset($this->tables[$name]);
+    return array_key_exists($name, $this->tables);
   }
 
   /**

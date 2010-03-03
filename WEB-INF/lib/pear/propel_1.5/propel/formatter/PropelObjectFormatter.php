@@ -1,7 +1,7 @@
 <?php
 
 /*
- *  $Id: PropelObjectFormatter.php 1547 2010-02-12 13:01:24Z francois $
+ *  $Id: PropelObjectFormatter.php 1585 2010-02-26 08:28:11Z francois $
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -25,7 +25,7 @@
  * format() returns a PropelObjectCollection of Propel model objects
  *
  * @author     Francois Zaninotto
- * @version    $Revision: 1547 $
+ * @version    $Revision: 1585 $
  * @package    propel.runtime.formatter
  */
 class PropelObjectFormatter extends PropelFormatter
@@ -35,10 +35,9 @@ class PropelObjectFormatter extends PropelFormatter
 	public function format(PDOStatement $stmt)
 	{
 		$this->checkCriteria();
-		$class = $this->collectionName;
-		if(class_exists($class)) {
+		if($class = $this->collectionName) {
 			$collection = new $class();
-			$collection->setModel($this->getCriteria()->getModelName());
+			$collection->setModel($this->class);
 			$collection->setFormatter($this);
 		} else {
 			$collection = array();
@@ -93,9 +92,7 @@ class PropelObjectFormatter extends PropelFormatter
 	 */
 	public function getAllObjectsFromRow($row)
 	{
-		$col = 0;
-		$peer = $this->peer;
-		list($obj, $col) = call_user_func(array($peer, 'populateObject'), $row, $col);
+		list($obj, $col) = call_user_func(array($this->peer, 'populateObject'), $row);
 		foreach ($this->getCriteria()->getWith() as $join) {
 			$startObject = $join->getObjectToRelate($obj);
 			$peer = $join->getTableMap()->getPeerClassname();

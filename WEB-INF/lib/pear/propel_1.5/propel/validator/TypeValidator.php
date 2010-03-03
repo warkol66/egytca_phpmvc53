@@ -1,6 +1,6 @@
 <?php
 /*
- *  $Id: TypeValidator.php 1347 2009-12-03 21:06:36Z francois $
+ *  $Id: TypeValidator.php 1553 2010-02-15 21:39:54Z francois $
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -31,14 +31,49 @@
  * </code>
  *
  * @author     Hans Lellelid <hans@xmpl.org>
- * @version    $Revision: 1347 $
+ * @version    $Revision: 1553 $
  * @package    propel.runtime.validator
  */
 class TypeValidator implements BasicValidator
 {
-
 	public function isValid(ValidatorMap $map, $value)
 	{
-		return (gettype($value) == $map->getValue());
+		switch ($map->getValue()) {
+			case 'array':
+				return is_array($value);
+				break;
+			case 'bool':
+			case 'boolean':
+				return is_bool($value);
+				break;
+			case 'float':
+				return is_float($value);
+				break;
+			case 'int':
+			case 'integer':
+				return is_int($value);
+				break;
+			case 'numeric':
+				return is_numeric($value);
+				break;
+			case 'object':
+				return is_object($value);
+				break;
+			case 'resource':
+				return is_resource($value);
+				break;
+			case 'scalar':
+				return is_scalar($value);
+				break;
+			case 'string':
+				return is_string($value);
+				break;
+			case 'function':
+				return function_exists($value);
+				break;
+			default:
+				throw new PropelException('Unkonwn type ' . $map->getValue());
+				break;
+		}
 	}
 }

@@ -1,6 +1,6 @@
 <?php
 /*
- *  $Id: PropelConfiguration.php 1347 2009-12-03 21:06:36Z francois $
+ *  $Id: PropelConfiguration.php 1583 2010-02-25 14:03:39Z francois $
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -28,7 +28,7 @@
  * PropelConfiguration instance.
  *
  * @author     Veikko Mäkinen <veikko@veikko.fi>
- * @version    $Revision: 1347 $
+ * @version    $Revision: 1583 $
  * @package    propel.runtime.config
  */
 class PropelConfiguration implements ArrayAccess
@@ -59,7 +59,7 @@ class PropelConfiguration implements ArrayAccess
 	 */
 	public function offsetExists($offset)
 	{
-		return isset($this->parameter[$offset]) || array_key_exists($offset, $this->parameters);
+		return array_key_exists($offset, $this->parameters);
 	}
 
 	/**
@@ -99,7 +99,7 @@ class PropelConfiguration implements ArrayAccess
 		$ret = $this->parameters;
 		$parts = explode('.', $name); //name.space.name
 		while ($part = array_shift($parts)) {
-			if (array_key_exists($part, $ret)) {
+			if (isset($ret[$part])) {
 				$ret = $ret[$part];
 			} else {
 				return $default;

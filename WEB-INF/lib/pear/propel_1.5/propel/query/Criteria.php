@@ -1,6 +1,7 @@
 <?php
+
 /*
- *  $Id: Criteria.php 1550 2010-02-15 17:48:10Z francois $
+ *  $Id: Criteria.php 1591 2010-03-02 20:57:59Z francois $
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -32,7 +33,7 @@
  * @author     Eric Dobbs <eric@dobbse.net> (Torque)
  * @author     Henning P. Schmiedehausen <hps@intermeta.de> (Torque)
  * @author     Sam Joseph <sam@neurogrid.com> (Torque)
- * @version    $Revision: 1550 $
+ * @version    $Revision: 1591 $
  * @package    propel.runtime.query
  */
 class Criteria implements IteratorAggregate
@@ -208,7 +209,7 @@ class Criteria implements IteratorAggregate
 	}
 
 	/**
-	 * Get the criteria map.
+	 * Get the criteria map, i.e. the array of Criterions
 	 * @return     array
 	 */
 	public function getMap()
@@ -406,10 +407,7 @@ class Criteria implements IteratorAggregate
 	 */
 	public function getCriterion($column)
 	{
-		if ( isset ( $this->map[$column] ) ) {
-			return $this->map[$column];
-		}
-		return null;
+		return $this->map[$column];
 	}
 	
 	/**
@@ -1117,7 +1115,7 @@ class Criteria implements IteratorAggregate
 	{
 		return $this->having;
 	}
-
+	
 	/**
 	 * Remove an object from the criteria.
 	 *

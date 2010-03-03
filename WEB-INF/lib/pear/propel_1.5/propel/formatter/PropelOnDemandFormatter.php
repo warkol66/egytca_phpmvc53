@@ -26,7 +26,7 @@
  * This formatter consumes less memory than the PropelObjectFormatter, but doesn't use Instance Pool
  *
  * @author     Francois Zaninotto
- * @version    $Revision: 1528 $
+ * @version    $Revision: 1569 $
  * @package    propel.runtime.formatter
  */
 class PropelOnDemandFormatter extends PropelObjectFormatter
@@ -36,6 +36,9 @@ class PropelOnDemandFormatter extends PropelObjectFormatter
 	public function format(PDOStatement $stmt)
 	{
 		$this->checkCriteria();
+		if ($this->getCriteria()->isWithOneToMany()) {
+			throw new PropelException('PropelOnDemandFormatter cannot hydrate related objects using a one-to-many relationship. Try removing with() from your query.');
+		}
 		$class = $this->collectionName;
 		$collection = new $class();
 		$collection->setModel($this->getCriteria()->getModelName());

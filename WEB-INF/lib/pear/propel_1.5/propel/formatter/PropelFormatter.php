@@ -1,7 +1,7 @@
 <?php 
 
 /*
- *  $Id: PropelFormatter.php 1483 2010-01-22 22:24:30Z francois $
+ *  $Id: PropelFormatter.php 1585 2010-02-26 08:28:11Z francois $
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -24,7 +24,7 @@
  * Abstract class for query formatter
  *
  * @author     Francois Zaninotto
- * @version    $Revision: 1483 $
+ * @version    $Revision: 1585 $
  * @package    propel.runtime.formatter
  */
 abstract class PropelFormatter
@@ -58,11 +58,11 @@ abstract class PropelFormatter
 	 */
 	protected function checkCriteria()
 	{
-		if (null === $this->criteria || !$this->criteria instanceof ModelCriteria) {
+		if (!$this->criteria instanceof ModelCriteria) {
 			throw new PropelException('A formatter needs a ModelCriteria. Use PropelFormatter::setCriteria() to set one');
 		}
-		$this->class = $this->getCriteria()->getModelName();
-		$this->peer = $this->getCriteria()->getModelPeerName();		
+		$this->class = $this->criteria->getModelName();
+		$this->peer = $this->criteria->getModelPeerName();		
 	}
 	
 	/**

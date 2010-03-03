@@ -1,7 +1,7 @@
 <?php
 
 /*
- *  $Id: BaseObject.php 1528 2010-02-05 14:13:37Z francois $
+ *  $Id: BaseObject.php 1564 2010-02-19 10:37:52Z francois $
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -27,7 +27,7 @@
  * @author     Hans Lellelid <hans@xmpl.org> (Propel)
  * @author     Frank Y. Kim <frank.kim@clearink.com> (Torque)
  * @author     John D. McNally <jmcnally@collab.net> (Torque)
- * @version    $Revision: 1528 $
+ * @version    $Revision: 1564 $
  * @package    propel.runtime.om
  */
 abstract class BaseObject
@@ -37,13 +37,13 @@ abstract class BaseObject
 	 * attribute to determine if this object has previously been saved.
 	 * @var        boolean
 	 */
-	private $_new = true;
+	protected $_new = true;
 
 	/**
 	 * attribute to determine whether this object has been deleted.
 	 * @var        boolean
 	 */
-	private $_deleted = false;
+	protected $_deleted = false;
 
 	/**
 	 * The columns that have been modified in current object.
@@ -318,6 +318,16 @@ abstract class BaseObject
 	protected function log($msg, $priority = Propel::LOG_INFO)
 	{
 		return Propel::log(get_class($this) . ': ' . $msg, $priority);
+	}
+	
+	/**
+	 * Clean up internal collections prior to serializing
+	 * Avoids recursive loops that turn into segmentation faults when serializing
+	 */
+	public function __sleep()
+	{
+		$this->clearAllReferences();
+		return array_keys(get_object_vars($this));
 	}
 
 }
