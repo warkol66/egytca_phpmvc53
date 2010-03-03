@@ -494,7 +494,7 @@ class DataSourceRealm extends RealmBase {
 		$aRoles = $this->getRoles($sUsername);
 
 		// Create and return a suitable Principal for this user
-		$oGP =& new GenericPrincipal($sUsername, $sCredentials, $this, $aRoles);
+		$oGP = new GenericPrincipal($sUsername, $sCredentials, $this, $aRoles);
 		return $oGP;
 
 	}
@@ -657,7 +657,7 @@ class DataSourceRealm extends RealmBase {
 		}
 
 		$sDataSource = $this->getConnDBDriver();
-		$oDataSource =& new $sDataSource;
+		$oDataSource = new $sDataSource;
 		$oDataSource->setHost($this->getConnectionURL());
 		$oDataSource->setDatabase($this->getAuthDB());
 		$oDataSource->setUsername($this->getConnectionName());

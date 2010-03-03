@@ -132,7 +132,7 @@ class ObjectCreateRule extends Rule {
 			include_once $realClassName.'.php';
 		}
 
-		$oRule =& new $realClassName;
+		$oRule = new $realClassName;
 		$this->digester->push($oRule);
 		#### TO DO ####
     }

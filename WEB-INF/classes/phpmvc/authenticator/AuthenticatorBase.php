@@ -125,9 +125,9 @@ class AuthenticatorBase {
 		$config = 'AuthLocalStrings';
 		$returnNull = False;	// return something like "???message.hello_world???" if we
 									// cannot find a message match in any of the properties files.
-		$defaultLocale =& new Locale(); // default appServer Locale
+		$defaultLocale = new Locale(); // default appServer Locale
 		$factory = NULL;		// MessageResources factory classes, skip for now
-		$pmr =& new PropertyMessageResources($factory, $config, $returnNull);
+		$pmr = new PropertyMessageResources($factory, $config, $returnNull);
 		$pmr->setDefaultLocale($defaultLocale);
 		$this->pmr = $pmr;
 

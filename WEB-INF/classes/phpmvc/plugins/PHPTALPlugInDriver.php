@@ -131,7 +131,7 @@ class PHPTALPlugInDriver extends APlugIn {
 		parent::APlugIn();
 
 		$path = False;					// "./WEB-INF/taltpl/myTalPage.html"
-		$this->plugIn =& new PHPTAL($path);
+		$this->plugIn = new PHPTAL($path);
 
 	}
 

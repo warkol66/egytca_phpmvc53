@@ -58,7 +58,7 @@ class SmartyPlugInDriver extends APlugIn {
 		parent::APlugIn();
 	
 		// Using Smarty class
-		$this->plugIn =& new Smarty;
+		$this->plugIn = new Smarty;
 
 	}
 

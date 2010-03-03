@@ -150,7 +150,7 @@ class MultiPartUploadFileHandler {
 		$this->log->setLog('isTraceEnabled'	, False);
 
 		// Using PEAR HTTP_Upload class library in this implementation
-		$this->uploader =& new HTTP_Upload($lang);
+		$this->uploader = new HTTP_Upload($lang);
 
 	} 
 

@@ -212,7 +212,7 @@ class ApplicationConfig {
 	*/
 	function &getControllerConfig() {
 		if($this->controllerConfig == NULL) {
-			$this->controllerConfig =& new ControllerConfig();
+			$this->controllerConfig = new ControllerConfig();
 		}
 		$controllerConfig =& $this->controllerConfig;
 		return $controllerConfig;
@@ -238,7 +238,7 @@ class ApplicationConfig {
 	*/
 	function &getViewResourcesConfig() {
 		if($this->viewResourcesConfig == NULL) {
-			$this->viewResourcesConfig =& new ViewResourcesConfig();
+			$this->viewResourcesConfig = new ViewResourcesConfig();
 		}
 		return $this->viewResourcesConfig;
 	}
