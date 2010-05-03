@@ -1,30 +1,18 @@
 <?php
 
-/*
-*  $Id: DBMSSQL.php 1566 2010-02-19 14:01:09Z KRavEN $
-*
-* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-* "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-* LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-* A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-* OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-* SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-* LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-* DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-* THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-* (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-* OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*
-* This software consists of voluntary contributions made by many individuals
-* and is licensed under the LGPL. For more information please see
-* <http://propel.phpdb.org>.
-*/
+/**
+ * This file is part of the Propel package.
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ *
+ * @license    MIT License
+ */
 
 /**
  * This is used to connect to a MSSQL database.
  *
  * @author     Hans Lellelid <hans@xmpl.org> (Propel)
- * @version    $Revision: 1566 $
+ * @version    $Revision: 1700 $
  * @package    propel.runtime.adapter
  */
 class DBMSSQL extends DBAdapter
@@ -121,6 +109,13 @@ class DBMSSQL extends DBAdapter
 
 		//split the select and from clauses out of the original query
 		$selectSegment = array();
+
+		$selectText = 'SELECT ';
+
+		if (preg_match('/\Aselect(\s+)distinct/i', $sql)) {
+			$selectText .= 'DISTINCT ';
+		}
+
 		preg_match('/\Aselect(.*)from(.*)/si', $sql, $selectSegment);
 		if(count($selectSegment) == 3) {
 			$selectStatement = trim($selectSegment[1]);
@@ -129,10 +124,10 @@ class DBMSSQL extends DBAdapter
 			throw new Exception('DBMSSQL::applyLimit() could not locate the select statement at the start of the query.');
 		}
 
-		// if we're starting at offset 0 then theres no need to simulate limit, 
+		// if we're starting at offset 0 then theres no need to simulate limit,
 		// just grab the top $limit number of rows
 		if($offset == 0) {
-			$sql = 'SELECT TOP ' . $limit . ' ' . $selectStatement . ' FROM ' . $fromStatement;
+			$sql = $selectText . 'TOP ' . $limit . ' ' . $selectStatement . ' FROM ' . $fromStatement;
 			return;
 		}
 
@@ -209,7 +204,7 @@ class DBMSSQL extends DBAdapter
 		}
 
 		//substring the select strings to get rid of the last comma and add our FROM and SELECT clauses
-		$innerSelect = 'SELECT ROW_NUMBER() OVER(' . $orderStatement . ') AS RowNumber, ' . substr($innerSelect, 0, - 2) . ' FROM';
+		$innerSelect = $selectText . 'ROW_NUMBER() OVER(' . $orderStatement . ') AS RowNumber, ' . substr($innerSelect, 0, - 2) . ' FROM';
 		//outer select can't use * because of the RowNumber column
 		$outerSelect = 'SELECT ' . substr($outerSelect, 0, - 2) . ' FROM';
 

@@ -1,30 +1,18 @@
 <?php
 
-/*
- *  $Id: ModelCriterion.php 1347 2009-12-03 21:06:36Z francois $
+/**
+ * This file is part of the Propel package.
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * This software consists of voluntary contributions made by many individuals
- * and is licensed under the LGPL. For more information please see
- * <http://propel.phpdb.org>.
+ * @license    MIT License
  */
 
 /**
  * This is an "inner" class that describes an object in the criteria.
  *
  * @author     Francois
- * @version    $Revision: 1347 $
+ * @version    $Revision: 1630 $
  * @package    propel.runtime.query
  */
 class ModelCriterion extends Criterion
@@ -70,7 +58,10 @@ class ModelCriterion extends Criterion
 	/**
 	 * Figure out which MocelCriterion method to use 
 	 * to build the prepared statement and parameters using to the Criterion comparison
-	 * and call it to append the prepared statement and the parameters of the current clause
+	 * and call it to append the prepared statement and the parameters of the current clause.
+	 * For performance reasons, this method tests the cases of parent::dispatchPsHandling()
+	 * first, and that is not possible through inheritance ; that's why the parent
+	 * code is duplicated here.
 	 *
 	 * @param      string &$sb The string that will receive the Prepared Statement
 	 * @param      array $params A list to which Prepared Statement parameters will be appended
@@ -78,6 +69,22 @@ class ModelCriterion extends Criterion
 	protected function dispatchPsHandling(&$sb, array &$params)
 	{
 		switch ($this->comparison) {
+			case Criteria::CUSTOM:
+				// custom expression with no parameter binding
+				$this->appendCustomToPs($sb, $params);
+				break;
+			case Criteria::IN:
+			case Criteria::NOT_IN:
+				// table.column IN (?, ?) or table.column NOT IN (?, ?)
+				$this->appendInToPs($sb, $params);
+				break;
+			case Criteria::LIKE:
+			case Criteria::NOT_LIKE:
+			case Criteria::ILIKE:
+			case Criteria::NOT_ILIKE:
+				// table.column LIKE ? or table.column NOT LIKE ?  (or ILIKE for Postgres)
+				$this->appendLikeToPs($sb, $params);
+				break;
 			case ModelCriteria::MODEL_CLAUSE:
 				// regular model clause, e.g. 'book.TITLE = ?'
 				$this->appendModelClauseToPs($sb, $params);
@@ -93,10 +100,11 @@ class ModelCriterion extends Criterion
 			case ModelCriteria::MODEL_CLAUSE_ARRAY:
 				// IN or NOT IN model clause, e.g. 'book.TITLE NOT IN ?'
 				$this->appendModelClauseArrayToPs($sb, $params);
-				break;							
+				break;
 			default:
-				// fallback to Criterion methods
-				parent::dispatchHandling($sb, $params);
+				// table.column = ? or table.column >= ? etc. (traditional expressions, the default)
+				$this->appendBasicToPs($sb, $params);
+
 		}
 	}
 
@@ -178,7 +186,7 @@ class ModelCriterion extends Criterion
 		if ($valuesLength !== 0) {
 			$sb .= str_replace('?', '(' . implode(',', $_bindParams) . ')', $this->clause);
 		} else {
-			$sb .= (stripos($this->clause, ' NOT IN ') === false) ? "1=1" : "1<>1";
+			$sb .= (stripos($this->clause, ' NOT IN ') === false) ? "1<>1" : "1=1";
 		}
 		unset ( $value, $valuesLength );
 	}

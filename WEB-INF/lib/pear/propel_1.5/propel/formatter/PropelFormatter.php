@@ -1,30 +1,18 @@
 <?php 
 
-/*
- *  $Id: PropelFormatter.php 1585 2010-02-26 08:28:11Z francois $
+/**
+ * This file is part of the Propel package.
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * This software consists of voluntary contributions made by many individuals
- * and is licensed under the LGPL. For more information please see
- * <http://propel.phpdb.org>.
+ * @license    MIT License
  */
 
 /**
  * Abstract class for query formatter
  *
  * @author     Francois Zaninotto
- * @version    $Revision: 1585 $
+ * @version    $Revision: 1689 $
  * @package    propel.runtime.formatter
  */
 abstract class PropelFormatter
@@ -79,7 +67,9 @@ abstract class PropelFormatter
 	 */
 	protected function getWorkerObject($col, $class)
 	{
-		if(!isset($this->currentObjects[$col])) {
+		if(isset($this->currentObjects[$col])) {
+			$this->currentObjects[$col]->clear();
+		} else {
 			$this->currentObjects[$col] = new $class();
 		}
 		return $this->currentObjects[$col];

@@ -1,23 +1,11 @@
 <?php
 
-/*
- *  $Id: PropelObjectFormatter.php 1380 2009-12-28 10:11:46Z francois $
+/**
+ * This file is part of the Propel package.
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * This software consists of voluntary contributions made by many individuals
- * and is licensed under the LGPL. For more information please see
- * <http://propel.phpdb.org>.
+ * @license    MIT License
  */
 
 /**
@@ -26,7 +14,7 @@
  * This formatter consumes less memory than the PropelObjectFormatter, but doesn't use Instance Pool
  *
  * @author     Francois Zaninotto
- * @version    $Revision: 1569 $
+ * @version    $Revision: 1653 $
  * @package    propel.runtime.formatter
  */
 class PropelOnDemandFormatter extends PropelObjectFormatter
@@ -42,8 +30,7 @@ class PropelOnDemandFormatter extends PropelObjectFormatter
 		$class = $this->collectionName;
 		$collection = new $class();
 		$collection->setModel($this->getCriteria()->getModelName());
-		$collection->setFormatter($this);
-		$collection->setStatement($stmt);
+		$collection->initIterator($this, $stmt);
 		
 		return $collection;
 	}
@@ -61,20 +48,30 @@ class PropelOnDemandFormatter extends PropelObjectFormatter
 	public function getAllObjectsFromRow($row)
 	{
 		$col = 0;
-		$tableMap = $this->getCriteria()->getTableMap(); 
+		// main object
+		$tableMap = $this->getCriteria()->getTableMap();
 		$class = $tableMap->isSingleTableInheritance() ? call_user_func(array($tableMap->getPeerClassname(), 'getOMClass'), $row, $col, false) : $this->class;
 		$obj = $this->getSingleObjectFromRow($row, $class, $col);
-		
+		// related objects using 'with'
 		foreach ($this->getCriteria()->getWith() as $join) {
-			$startObject = $join->getObjectToRelate($obj);
-			$tableMap = $join->getTableMap(); 
-			$class = $tableMap->isSingleTableInheritance() ? call_user_func(array($tableMap->getPeerClassname(), 'getOMClass'), $row, $col, false) : $tableMap->getClassname(); 
+			$tableMap = $join->getTableMap();
+			if ($tableMap->isSingleTableInheritance()) {
+				$class = call_user_func(array($tableMap->getPeerClassname(), 'getOMClass'), $row, $col, false);
+				$refl = new ReflectionClass($class);
+				if ($refl->isAbstract()) {
+					$col += constant($class . 'Peer::NUM_COLUMNS');
+					continue;
+				} 
+			} else {
+				$class = $tableMap->getClassname();
+			}
 			$endObject = $this->getSingleObjectFromRow($row, $class, $col);
 			// as we may be in a left join, the endObject may be empty
 			// in which case it should not be related to the previous object
 			if ($endObject->isPrimaryKeyNull()) {
 				continue;
 			}
+			$startObject = $join->getObjectToRelate($obj);
 			$method = 'set' . $join->getRelationMap()->getName();
 			$startObject->$method($endObject);
 		}

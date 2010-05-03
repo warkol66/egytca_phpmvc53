@@ -1,23 +1,11 @@
 <?php
 
-/*
- *  $Id: PropelCollection.php $
+/**
+ * This file is part of the Propel package.
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * This software consists of voluntary contributions made by many individuals
- * and is licensed under the LGPL. For more information please see
- * <http://propel.phpdb.org>.
+ * @license    MIT License
  */
 
 /**
@@ -124,6 +112,26 @@ class PropelArrayCollection extends PropelCollection
 			$ret[$key] = $element;
 		}
 
+		return $ret;
+	}
+	
+	/**
+	 * Get an associative array representation of the collection
+	 * The first parameter specifies the column to be used for the key,
+	 * And the seconf for the value.
+	 * <code>
+	 * $res = $coll->toKeyValue('Id', 'Name');
+	 * </code>
+	 *
+	 * @return    array
+	 */
+	public function toKeyValue($keyColumn, $valueColumn)
+	{
+		$ret = array();
+		foreach ($this as $obj) {
+			$ret[$obj[$keyColumn]] = $obj[$valueColumn];
+		}
+		
 		return $ret;
 	}
 

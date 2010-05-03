@@ -1,22 +1,11 @@
 <?php
-/*
- *  $Id: ModelCriteria.php 1591 2010-03-02 20:57:59Z francois $
+
+/**
+ * This file is part of the Propel package.
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * This software consists of voluntary contributions made by many individuals
- * and is licensed under the LGPL. For more information please see
- * <http://propel.phpdb.org>.
+ * @license    MIT License
  */
 
 /**
@@ -26,8 +15,14 @@
  * A ModelCriteria requires additional information to be initialized. 
  * Using a model name and tablemaps, a ModelCriteria can do more powerful things than a simple Criteria
  *
+ * magic methods:
+ *
+ * @method     ModelCriteria leftJoin($relation) Adds a LEFT JOIN clause to the query
+ * @method     ModelCriteria rightJoin($relation) Adds a RIGHT JOIN clause to the query
+ * @method     ModelCriteria innerJoin($relation) Adds a INNER JOIN clause to the query
+ *
  * @author     François Zaninotto
- * @version    $Revision: 1591 $
+ * @version    $Revision: 1662 $
  * @package    propel.runtime.query
  */
 class ModelCriteria extends Criteria
@@ -52,6 +47,7 @@ class ModelCriteria extends Criteria
 	protected $defaultFormatterClass = ModelCriteria::FORMAT_OBJECT;
 	protected $with = array();
 	protected $isWithOneToMany = false;
+	protected $previousJoin = null; // this is introduced to prevent useQuery->join from going wrong
 		
 	/**
 	 * Creates a new instance with the default capacity which corresponds to
@@ -279,7 +275,7 @@ class ModelCriteria extends Criteria
 			// where('Book.AuthorId = ?', 12)
 			$criterion = $this->getCriterionForClause($clause, $value);
 		}
-		$this->add($criterion, null, null);
+		$this->addAnd($criterion, null, null);
 		
 		return $this;
 	}
@@ -368,12 +364,8 @@ class ModelCriteria extends Criteria
 	 */
 	public function orderBy($columnName, $order = Criteria::ASC)
 	{
-		list($column, $realColumnName) = $this->getColumnFromName($columnName);
-		if (!$column instanceof ColumnMap) {
-			throw new PropelException('ModelCriteria::orderBy() expects a valid column name (e.g. Book.Title) as first argument');
-		}
+		list($column, $realColumnName) = $this->getColumnFromName($columnName, false);
 		$order = strtoupper($order);
-		
 		switch ($order) {
 			case Criteria::ASC:
 				$this->addAscendingOrderByColumn($realColumnName);
@@ -382,7 +374,7 @@ class ModelCriteria extends Criteria
 				$this->addDescendingOrderByColumn($realColumnName);
 				break;
 			default:
-				throw new PropelException('ModelCriteria::orderBy() only accepts "asc" or "desc" as argument');
+				throw new PropelException('ModelCriteria::orderBy() only accepts Criteria::ASC or Criteria::DESC as argument');
 		}
 		
 		return $this;
@@ -402,10 +394,7 @@ class ModelCriteria extends Criteria
 	 */
 	public function groupBy($columnName)
 	{
-		list($column, $realColumnName) = $this->getColumnFromName($columnName);
-		if (!$column instanceof ColumnMap) {
-			throw new PropelException('ModelCriteria::groupBy() expects a valid column name (e.g. Book.AuthorId) as first argument');
-		}
+		list($column, $realColumnName) = $this->getColumnFromName($columnName, false);
 		$this->addGroupByColumn($realColumnName);
 		
 		return $this;
@@ -453,6 +442,28 @@ class ModelCriteria extends Criteria
 		
 		return $this;
 	}
+	
+	/**
+	 * This method returns the previousJoin for this ModelCriteria,
+	 * by default this is null, but after useQuery this is set the to the join of that use
+	 * 
+	 * @return Join the previousJoin for this ModelCriteria
+	 */
+	public function getPreviousJoin()
+	{
+		return $this->previousJoin;
+	}
+	
+	/**
+	 * This method sets the previousJoin for this ModelCriteria,
+	 * by default this is null, but after useQuery this is set the to the join of that use
+	 * 
+	 * @param Join $previousJoin The previousJoin for this ModelCriteria
+	 */
+	public function setPreviousJoin(Join $previousJoin)
+	{
+		$this->previousJoin = $previousJoin;
+	}
 
 	/**
 	 * Adds a JOIN clause to the query
@@ -483,13 +494,13 @@ class ModelCriteria extends Criteria
 			// simple relation name, refers to the current table
 			$leftName = $this->getModelAliasOrName();
 			$relationName = $fullName;
-			$previousJoin = null;
+			$previousJoin = $this->getPreviousJoin();
 			$tableMap = $this->getTableMap();
 		} else {
 			list($leftName, $relationName) = explode('.', $fullName);
 			// find the TableMap for the left table using the $leftName
 			if ($leftName == $this->getModelAliasOrName()) {
-				$previousJoin = null;
+				$previousJoin = $this->getPreviousJoin();
 				$tableMap = $this->getTableMap();
 			} elseif (isset($this->joins[$leftName])) {
 				$previousJoin = $this->joins[$leftName];
@@ -507,10 +518,8 @@ class ModelCriteria extends Criteria
 		$relationMap = $tableMap->getRelation($relationName);
 		
 		// create a ModelJoin object for this join
-		$rightTable = $relationMap->getRightTable();
 		$join = new ModelJoin();
 		$join->setJoinType($joinType);
-		$join->setTableMap($rightTable);
 		if(null !== $previousJoin) {
 			$join->setPreviousJoin($previousJoin);
 		}
@@ -518,7 +527,7 @@ class ModelCriteria extends Criteria
 		
 		// add the ModelJoin to the current object
 		if($relationAlias !== null) {
-			$this->addAlias($relationAlias, $rightTable->getName());
+			$this->addAlias($relationAlias, $relationMap->getRightTable()->getName());
 			$this->addJoinObject($join, $relationAlias);
 		} else {
 			$this->addJoinObject($join, $relationName);
@@ -562,13 +571,11 @@ class ModelCriteria extends Criteria
 	public function joinWith($relation, $joinType = Criteria::INNER_JOIN)
 	{
 		$this->join($relation, $joinType);
-		end($this->joins);
-		$relationName = key($this->joins);
-		$this->with($relationName);
+		$this->with(self::getRelationName($relation)); 
 		
 		return $this;
 	}
-	
+ 	
 	/**
 	 * Adds a relation to hydrate together with the main object
 	 * The relation must be initialized via a join() prior to calling with()
@@ -599,8 +606,8 @@ class ModelCriteria extends Criteria
 			// For performance reasons, the formatters will use a special routine in this case
 			$this->isWithOneToMany = true;
 		}
-		// check that the columns of the main class are already added
-		if (!$this->hasSelectClause()) {
+		// check that the columns of the main class are already added (but only if this isn't a useQuery)
+		if (!$this->hasSelectClause() && !$this->getPrimaryCriteria()) {
 			$this->addSelfSelectColumns();
 		}
 		// add the columns of the related class
@@ -645,8 +652,8 @@ class ModelCriteria extends Criteria
 		}
 		$clause = trim($clause);
 		$this->replaceNames($clause);
-		// check that the columns of the main class are already added
-		if (!$this->hasSelectClause()) {
+		// check that the columns of the main class are already added (if this is the primary ModelCriteria)
+		if (!$this->hasSelectClause() && !$this->getPrimaryCriteria()) {
 			$this->addSelfSelectColumns();
 		}
 		$this->addAsColumn($name, $clause);
@@ -666,7 +673,7 @@ class ModelCriteria extends Criteria
 	public function useQuery($relationName, $secondaryCriteriaClass = null)
 	{
 		if (!isset($this->joins[$relationName])) {
-			throw new PropelException('Unknown class or alias ' . $name);
+			throw new PropelException('Unknown class or alias ' . $relationName);
 		}
 		$className = $this->joins[$relationName]->getTableMap()->getPhpName();
 		if (null === $secondaryCriteriaClass) {
@@ -675,9 +682,9 @@ class ModelCriteria extends Criteria
 			$secondaryCriteria = new $secondaryCriteriaClass();
 		}
 		if ($className != $relationName) {
-			$secondaryCriteria->setModelAlias($relationName, true);
+			$secondaryCriteria->setModelAlias($relationName, $relationName == $this->joins[$relationName]->getRelationMap()->getName() ? false : true);
 		}
-		$secondaryCriteria->setPrimaryCriteria($this);
+		$secondaryCriteria->setPrimaryCriteria($this, $this->joins[$relationName]);
 		
 		return $secondaryCriteria;
 	}
@@ -741,10 +748,12 @@ class ModelCriteria extends Criteria
 	 * Sets the primary Criteria for this secondary Criteria
 	 *
 	 * @param     ModelCriteria $criteria The primary criteria
+	 * @param Join $previousJoin The previousJoin for this ModelCriteria
 	 */
-	public function setPrimaryCriteria(ModelCriteria $criteria)
+	public function setPrimaryCriteria(ModelCriteria $criteria, Join $previousJoin)
 	{
 		$this->primaryCriteria = $criteria;
+		$this->setPreviousJoin($previousJoin);
 	}
 
 	/**
@@ -802,7 +811,29 @@ class ModelCriteria extends Criteria
 	  }
 	  return array($class, $alias);
 	}
-	
+
+	/** 
+	 * Returns the name of a relation from a string.
+	 * The input looks like '$leftName.$relationName $relationAlias'
+	 *
+	 * @param      string $relation Relation to use for the join 
+	 * @return     string the relationName used in the join 
+	 */ 
+	public static function getRelationName($relation) 
+	{ 
+		// get the relationName 
+		list($fullName, $relationAlias) = self::getClassAndAlias($relation); 
+		if ($relationAlias)  { 
+			$relationName = $relationAlias; 
+		} elseif (false === strpos($fullName, '.')) {
+			$relationName = $fullName; 
+		} else { 
+			list($leftName, $relationName) = explode('.', $fullName);
+		} 
+		
+		return $relationName; 
+	}
+		
 	/**
 	 * Code to execute before every SELECT statement
 	 * 
@@ -824,7 +855,7 @@ class ModelCriteria extends Criteria
 	 * 
 	 * @param     PropelPDO $con an optional connection object
 	 *
-	 * @return     mixed the list of results, formatted by the current formatter
+	 * @return     PropelObjectCollection|array|mixed the list of results, formatted by the current formatter
 	 */
 	public function find($con = null)
 	{
@@ -921,7 +952,8 @@ class ModelCriteria extends Criteria
 		// we may modify criteria, so copy it first
 		$criteria = clone $this;
 
-		if (!$criteria->hasSelectClause()) {
+		// check that the columns of the main class are already added (if this is the primary ModelCriteria)
+		if (!$this->hasSelectClause() && !$this->getPrimaryCriteria()) {
 			$criteria->addSelfSelectColumns();
 		}
 		
@@ -1155,9 +1187,7 @@ class ModelCriteria extends Criteria
 	 */
 	public function doDelete($con)
 	{
-		$affectedRows = BasePeer::doDelete($this, $con);
-		call_user_func(array($this->modelPeerName, 'clearInstancePool'));
-		call_user_func(array($this->modelPeerName, 'clearRelatedInstancePool'));
+		$affectedRows = call_user_func(array($this->modelPeerName, 'doDelete'), $this, $con);
 		
 		return $affectedRows;
 	}
@@ -1200,9 +1230,7 @@ class ModelCriteria extends Criteria
 	 */
 	public function doDeleteAll($con)
 	{
-		$affectedRows = BasePeer::doDeleteAll(constant($this->modelPeerName.'::TABLE_NAME'), $con);
-		call_user_func(array($this->modelPeerName, 'clearInstancePool'));
-		call_user_func(array($this->modelPeerName, 'clearRelatedInstancePool'));
+		$affectedRows = call_user_func(array($this->modelPeerName, 'doDeleteAll'), $con);
 		
 		return $affectedRows;
 	}
@@ -1453,7 +1481,6 @@ EOT;
 			list($class, $phpName) = explode('.', $phpName);
 		}
 		
-		
 		if ($class == $this->getModelAliasOrName()) {
 			// column of the Criteria's model
 			$tableMap = $this->getTableMap();
@@ -1477,6 +1504,9 @@ EOT;
 				$realColumnName = $column->getFullyQualifiedName();
 			}
 			return array($column, $realColumnName);
+		} elseif (isset($this->asColumns[$phpName])) {
+			// aliased column
+			return array(null, $phpName);
 		} else {
 			if ($failSilently) {
 				return array(null, null);
@@ -1614,6 +1644,20 @@ EOT;
 			}
 		}
 		
+		// Maybe it's a magic call to a qualified joinWith method, e.g. 'leftJoinWith' or 'joinWithAuthor'
+		if(($pos = stripos($name, 'joinWith')) !== false) {
+			$type = substr($name, 0, $pos);
+			if(in_array($type, array('left', 'right', 'inner'))) {
+				$joinType = strtoupper($type) . ' JOIN';
+			} else {
+				$joinType = Criteria::INNER_JOIN;
+			}
+			if(!$relation = substr($name, $pos + 8)) {
+			  $relation = $arguments[0];
+			}
+			return $this->joinWith($relation, $joinType);
+		}
+		
 		// Maybe it's a magic call to a qualified join method, e.g. 'leftJoin'
 		if(($pos = strpos($name, 'Join')) > 0)
 		{
@@ -1621,10 +1665,14 @@ EOT;
 			if(in_array($type, array('left', 'right', 'inner')))
 			{
 				$joinType = strtoupper($type) . ' JOIN';
+				// Test if first argument is suplied, else don't provide an alias to joinXXX (default value)
+        if (!isset($arguments[0])) {
+          $arguments[0] = '';
+        } 
 				array_push($arguments, $joinType);
 				$method = substr($name, $pos);
 				// no lcfirst in php<5.3...
-				$method = ($method == 'Join') ? 'join' : 'joinWith';
+				$method[0] = strtolower($method[0]);
 				return call_user_func_array(array($this, $method), $arguments);
 			}
 		}

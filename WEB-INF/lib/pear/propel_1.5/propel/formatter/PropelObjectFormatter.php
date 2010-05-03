@@ -1,23 +1,11 @@
 <?php
 
-/*
- *  $Id: PropelObjectFormatter.php 1585 2010-02-26 08:28:11Z francois $
+/**
+ * This file is part of the Propel package.
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * This software consists of voluntary contributions made by many individuals
- * and is licensed under the LGPL. For more information please see
- * <http://propel.phpdb.org>.
+ * @license    MIT License
  */
 
 /**
@@ -25,7 +13,7 @@
  * format() returns a PropelObjectCollection of Propel model objects
  *
  * @author     Francois Zaninotto
- * @version    $Revision: 1585 $
+ * @version    $Revision: 1679 $
  * @package    propel.runtime.formatter
  */
 class PropelObjectFormatter extends PropelFormatter
@@ -65,10 +53,9 @@ class PropelObjectFormatter extends PropelFormatter
 	public function formatOne(PDOStatement $stmt)
 	{
 		$this->checkCriteria();
-		if ($row = $stmt->fetch(PDO::FETCH_NUM)) {
+		$result = null;
+		while ($row = $stmt->fetch(PDO::FETCH_NUM)) {
 			$result = $this->getAllObjectsFromRow($row);
-		} else {
-			$result = null;
 		}
 		$stmt->closeCursor();
 		
@@ -99,7 +86,7 @@ class PropelObjectFormatter extends PropelFormatter
 			list($endObject, $col) = call_user_func(array($peer, 'populateObject'), $row, $col);
 			// as we may be in a left join, the endObject may be empty
 			// in which case it should not be related to the previous object
-			if ($endObject->isPrimaryKeyNull()) {
+			if (null === $endObject || $endObject->isPrimaryKeyNull()) {
 				continue;
 			}
 			$relation = $join->getRelationMap();

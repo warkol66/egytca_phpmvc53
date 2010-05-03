@@ -1,23 +1,11 @@
 <?php
 
-/*
- *  $Id: Criteria.php 1591 2010-03-02 20:57:59Z francois $
+/**
+ * This file is part of the Propel package.
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * This software consists of voluntary contributions made by many individuals
- * and is licensed under the LGPL. For more information please see
- * <http://propel.phpdb.org>.
+ * @license    MIT License
  */
 
 /**
@@ -33,7 +21,7 @@
  * @author     Eric Dobbs <eric@dobbse.net> (Torque)
  * @author     Henning P. Schmiedehausen <hps@intermeta.de> (Torque)
  * @author     Sam Joseph <sam@neurogrid.com> (Torque)
- * @version    $Revision: 1591 $
+ * @version    $Revision: 1681 $
  * @package    propel.runtime.query
  */
 class Criteria implements IteratorAggregate
@@ -79,7 +67,7 @@ class Criteria implements IteratorAggregate
 	const CUSTOM_EQUAL = "CUSTOM_EQUAL";
 
 	/** Comparison type. */
-	const DISTINCT = "DISTINCT ";
+	const DISTINCT = "DISTINCT";
 
 	/** Comparison type. */
 	const IN = " IN ";
@@ -88,7 +76,7 @@ class Criteria implements IteratorAggregate
 	const NOT_IN = " NOT IN ";
 
 	/** Comparison type. */
-	const ALL = "ALL ";
+	const ALL = "ALL";
 
 	/** Comparison type. */
 	const JOIN = "JOIN";
@@ -142,7 +130,7 @@ class Criteria implements IteratorAggregate
 	private $orderByColumns = array();
 	private $groupByColumns = array();
 	private $having = null;
-	private $asColumns = array();
+	protected $asColumns = array();
 	protected $joins = array();
 
 	/** The name of the database. */
@@ -717,19 +705,18 @@ class Criteria implements IteratorAggregate
 	}
 
 	/**
-	 * This is the way that you should add a straight (inner) join of two tables.  For
-	 * example:
-	 *
-	 * <p>
-	 * AND PROJECT.PROJECT_ID=FOO.PROJECT_ID
-	 * <p>
-	 *
-	 * left = PROJECT.PROJECT_ID
-	 * right = FOO.PROJECT_ID
+	 * This is the way that you should add a join of two tables. 
+	 * Example usage:
+	 * <code>
+	 * $c->addJoin(ProjectPeer::ID, FooPeer::PROJECT_ID, Criteria::LEFT_JOIN);
+	 * // LEFT JOIN FOO ON PROJECT.ID = FOO.PROJECT_ID
+	 * </code>
 	 *
 	 * @param      mixed $left A String with the left side of the join.
 	 * @param      mixed $right A String with the right side of the join.
-	 * @param      mixed $operator A String with the join operator e.g. LEFT JOIN, ...
+	 * @param      mixed $operator A String with the join operator
+	 *                             among Criteria::INNER_JOIN, Criteria::LEFT_JOIN,
+	 *                             and Criteria::RIGHT_JOIN
    *
 	 * @return     Criteria A modified Criteria object.
 	 */
@@ -754,7 +741,7 @@ class Criteria implements IteratorAggregate
 
 	/**
 	 * Add a join with multiple conditions
-	 * see http://propel.phpdb.org/trac/ticket/167, http://propel.phpdb.org/trac/ticket/606
+	 * @see http://propel.phpdb.org/trac/ticket/167, http://propel.phpdb.org/trac/ticket/606
 	 * 
 	 * Example usage:
 	 * $c->addMultipleJoin(array(
@@ -1000,8 +987,7 @@ class Criteria implements IteratorAggregate
 	/**
 	 * Get select columns.
 	 *
-	 * @return     array An array with the name of the select
-	 * columns.
+	 * @return     array An array with the name of the select columns.
 	 */
 	public function getSelectColumns()
 	{
@@ -1013,7 +999,8 @@ class Criteria implements IteratorAggregate
 	 *
 	 * @return     Criteria Modified Criteria object (for fluent API)
 	 */
-	public function clearSelectColumns() {
+	public function clearSelectColumns()
+	{
 		$this->selectColumns = $this->asColumns = array();
 		return $this;
 	}

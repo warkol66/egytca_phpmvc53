@@ -1,23 +1,11 @@
 <?php
 
-/*
- *  $Id: BasePeer.php 1587 2010-02-26 10:58:29Z francois $
+/**
+ * This file is part of the Propel package.
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * This software consists of voluntary contributions made by many individuals
- * and is licensed under the LGPL. For more information please see
- * <http://propel.phpdb.org>.
+ * @license    MIT License
  */
 
 /**
@@ -36,7 +24,7 @@
  * @author     John D. McNally <jmcnally@collab.net> (Torque)
  * @author     Brett McLaughlin <bmclaugh@algx.net> (Torque)
  * @author     Stephen Haberman <stephenh@chase3000.com> (Torque)
- * @version    $Revision: 1587 $
+ * @version    $Revision: 1687 $
  * @package    propel.runtime.util
  */
 class BasePeer
@@ -165,6 +153,9 @@ class BasePeer
 
 			// Execute the statement.
 			try {
+				if ($db->useQuoteIdentifier()) {
+					$tableName = $db->quoteIdentifierTable($tableName); 
+				}
 				$sql = "DELETE FROM " . $tableName . " WHERE " .  implode(" AND ", $whereClause);
 				$stmt = $con->prepare($sql);
 				self::populateStmtValues($stmt, $selectParams, $dbMap, $db);
@@ -188,20 +179,25 @@ class BasePeer
 	 * public static function doDeleteAll($con = null)
 	 * {
 	 *   if ($con === null) $con = Propel::getConnection(self::DATABASE_NAME);
-	 *   BasePeer::doDeleteAll(self::TABLE_NAME, $con);
+	 *   BasePeer::doDeleteAll(self::TABLE_NAME, $con, self::DATABASE_NAME);
 	 * }
 	 * </code>
 	 *
 	 * @param      string $tableName The name of the table to empty.
 	 * @param      PropelPDO $con A PropelPDO connection object.
+	 * @param      string $databaseName the name of the database.
 	 * @return     int	The number of rows affected by the statement.  Note
 	 * 				that the return value does require that this information
 	 * 				is returned (supported) by the Propel db driver.
 	 * @throws     PropelException - wrapping SQLException caught from statement execution.
 	 */
-	public static function doDeleteAll($tableName, PropelPDO $con)
+	public static function doDeleteAll($tableName, PropelPDO $con, $databaseName = null)
 	{
 		try {
+			$db = Propel::getDB($databaseName);
+			if ($db->useQuoteIdentifier()) {
+				$tableName = $db->quoteIdentifierTable($tableName);
+			}
 			$sql = "DELETE FROM " . $tableName;
 			$stmt = $con->prepare($sql);
 			$stmt->execute();
@@ -288,6 +284,7 @@ class BasePeer
 			// add identifiers
 			if ($adapter->useQuoteIdentifier()) {
 				$columns = array_map(array($adapter, 'quoteIdentifier'), $columns);
+				$tableName = $adapter->quoteIdentifierTable($tableName); 
 			}
 
 			$sql = 'INSERT INTO ' . $tableName
@@ -367,7 +364,11 @@ class BasePeer
 			$stmt = null;
 			try {
 
-				$sql = "UPDATE " . $tableName . " SET ";
+				if ($db->useQuoteIdentifier()) {
+					$sql = "UPDATE " . $db->quoteIdentifierTable($tableName) . " SET "; 
+				} else { 
+					$sql = "UPDATE " . $tableName . " SET ";
+				}
 				$p = 1;
 				foreach ($updateTablesColumns[$tableName] as $col) {
 					$updateColumnName = substr($col, strrpos($col, '.') + 1);
@@ -528,6 +529,12 @@ class BasePeer
 			$params = array();
 
 			if ($needsComplexCount) {
+				if (self::needsSelectAliases($criteria)) {
+					if ($criteria->getHaving()) {
+						throw new PropelException('Propel cannot create a COUNT query when using HAVING and  duplicate column names in the SELECT part');
+					}
+					self::turnSelectColumnsToAliases($criteria);
+				}
 				$selectSql = self::createSelectSql($criteria, $params);
 				$sql = 'SELECT COUNT(*) FROM (' . $selectSql . ') propelmatch4cnt';
 			} else {
@@ -680,25 +687,74 @@ class BasePeer
 
 			$dbMap = Propel::getDatabaseMap($criteria->getDbName());
 
-			if ($dbMap === null) {
-				throw new PropelException("\$dbMap is null");
-			}
-
-			if ($dbMap->getTable($table) === null) {
-				throw new PropelException("\$dbMap->getTable() is null");
-			}
-
-			$columns = $dbMap->getTable($table)->getColumns();
-			foreach (array_keys($columns) as $key) {
-				if ($columns[$key]->isPrimaryKey()) {
-					$pk = $columns[$key];
-					break;
-				}
+			$pks = $dbMap->getTable($table)->getPrimaryKeys();
+			if (!empty($pks)) {
+				$pk = array_shift($pks);
 			}
 		}
 		return $pk;
 	}
 
+	/**
+	 * Checks whether the Criteria needs to use column aliasing
+	 * This is implemented in a service class rather than in Criteria itself
+	 * in order to avoid doing the tests when it's not necessary (e.g. for SELECTs)
+	 */
+	public static function needsSelectAliases(Criteria $criteria)
+	{
+		$columnNames = array();
+		foreach ($criteria->getSelectColumns() as $fullyQualifiedColumnName) {
+			if ($pos = strrpos($fullyQualifiedColumnName, '.')) {
+				$columnName = substr($fullyQualifiedColumnName, $pos);
+				if (isset($columnNames[$columnName])) {
+					// more than one column with the same name, so aliasing is required
+					return true;
+				}
+				$columnNames[$columnName] = true;
+			}
+		}
+		return false;
+	}
+	
+	/**
+	 * Ensures uniqueness of select column names by turning them all into aliases
+	 * This is necessary for queries on more than one table when the tables share a column name
+	 * @see http://propel.phpdb.org/trac/ticket/795
+	 *
+	 * @param Criteria $criteria
+	 * 
+	 * @return Criteria The input, with Select columns replaced by aliases
+	 */
+	public static function turnSelectColumnsToAliases(Criteria $criteria)
+	{
+		$selectColumns = $criteria->getSelectColumns();
+		// clearSelectColumns also clears the aliases, so get them too
+		$asColumns = $criteria->getAsColumns();
+		$criteria->clearSelectColumns();
+		$columnAliases = $asColumns;
+		// add the select columns back
+		foreach ($selectColumns as $clause) {
+			// Generate a unique alias
+			$baseAlias = preg_replace('/\W/', '_', $clause);
+			$alias = $baseAlias;
+			// If it already exists, add a unique suffix
+			$i = 0;
+			while (isset($columnAliases[$alias])) {
+				$i++;
+				$alias = $baseAlias . '_' . $i;
+			}
+			// Add it as an alias
+			$criteria->addAsColumn($alias, $clause);
+			$columnAliases[$alias] = $clause;
+		}
+		// Add the aliases back, don't modify them
+		foreach ($asColumns as $name => $clause) {
+			$criteria->addAsColumn($name, $clause);
+		}
+		
+		return $criteria;
+	}
+	
 	/**
 	 * Method to create an SQL query based on values in a Criteria.
 	 *
@@ -717,69 +773,18 @@ class BasePeer
 		$db = Propel::getDB($criteria->getDbName());
 		$dbMap = Propel::getDatabaseMap($criteria->getDbName());
 
-		// redundant definition $selectModifiers = array();
-		$selectClause = array();
 		$fromClause = array();
 		$joinClause = array();
 		$joinTables = array();
 		$whereClause = array();
 		$orderByClause = array();
-		// redundant definition $groupByClause = array();
 
 		$orderBy = $criteria->getOrderByColumns();
 		$groupBy = $criteria->getGroupByColumns();
 		$ignoreCase = $criteria->isIgnoreCase();
-		$select = $criteria->getSelectColumns();
-		$aliases = $criteria->getAsColumns();
 
-		// simple copy
-		$selectModifiers = $criteria->getSelectModifiers();
-
-		// get selected columns
-		foreach ($select as $columnName) {
-
-			// expect every column to be of "table.column" formation
-			// it could be a function:  e.g. MAX(books.price)
-
-			$tableName = null;
-
-			$selectClause[] = $columnName; // the full column name: e.g. MAX(books.price)
-
-			$parenPos = strrpos($columnName, '(');
-			$dotPos = strrpos($columnName, '.', ($parenPos !== false ? $parenPos : 0));
-
-			// [HL] I think we really only want to worry about adding stuff to
-			// the fromClause if this function has a TABLE.COLUMN in it at all.
-			// e.g. COUNT(*) should not need this treatment -- or there needs to
-			// be special treatment for '*'
-			if ($dotPos !== false) {
-
-				if ($parenPos === false) { // table.column
-					$tableName = substr($columnName, 0, $dotPos);
-				} else { // FUNC(table.column)
-					$tableName = substr($columnName, $parenPos + 1, $dotPos - ($parenPos + 1));
-					// functions may contain qualifiers so only take the last
-					// word as the table name.
-					// COUNT(DISTINCT books.price)
-					$lastSpace = strpos($tableName, ' ');
-					if ($lastSpace !== false) { // COUNT(DISTINCT books.price)
-						$tableName = substr($tableName, $lastSpace + 1);
-					}
-				}
-				$tableName2 = $criteria->getTableForAlias($tableName);
-				if ($tableName2 !== null) {
-					$fromClause[] = $tableName2 . ' ' . $tableName;
-				} else {
-					$fromClause[] = $tableName;
-				}
-
-			} // if $dotPost !== false
-		}
-
-		// set the aliases
-		foreach ($aliases as $alias => $col) {
-			$selectClause[] = $col . ' AS ' . $alias;
-		}
+		// get the first part of the SQL statement, the SELECT part
+		$selectSql = self::createSelectSqlPart($criteria, $fromClause);
 
 		// add the criteria to WHERE clause
 		// this will also add the table names to the FROM clause if they are not already
@@ -938,8 +943,9 @@ class BasePeer
 				$column = $tableName ? $dbMap->getTable($tableName)->getColumn($columnName) : null;
 
 				if ($criteria->isIgnoreCase() && $column && $column->isText()) {
-					$orderByClause[] = $db->ignoreCaseInOrderBy("$tableAlias.$columnAlias") . $direction;
-					$selectClause[] = $db->ignoreCaseInOrderBy("$tableAlias.$columnAlias");
+					$ignoreCaseColumn = $db->ignoreCaseInOrderBy("$tableAlias.$columnAlias");
+					$orderByClause[] =  $ignoreCaseColumn . $direction;
+					$selectSql .= ' ' . $ignoreCaseColumn;
 				} else {
 					$orderByClause[] = $orderByColumn;
 				}
@@ -967,9 +973,7 @@ class BasePeer
 		$from .= $joinClause ? ' ' . implode(' ', $joinClause) : '';
 
 		// Build the SQL from the arrays we compiled
-		$sql =  "SELECT "
-		.($selectModifiers ? implode(" ", $selectModifiers) . " " : "")
-		.implode(", ", $selectClause)
+		$sql =  $selectSql
 		." FROM "  . $from
 		.($whereClause ? " WHERE ".implode(" AND ", $whereClause) : "")
 		.($groupByClause ? " GROUP BY ".implode(",", $groupByClause) : "")
@@ -978,8 +982,72 @@ class BasePeer
 
 		// APPLY OFFSET & LIMIT to the query.
 		if ($criteria->getLimit() || $criteria->getOffset()) {
-			$db->applyLimit($sql, $criteria->getOffset(), $criteria->getLimit());
+			$db->applyLimit($sql, $criteria->getOffset(), $criteria->getLimit(), $criteria);
 		}
+
+		return $sql;
+	}
+
+	/**
+	 * Builds the SELECT part of a SQL statement based on a Criteria
+	 * taking into account select columns and 'as' columns (i.e. columns aliases)
+	 */
+	public static function createSelectSqlPart(Criteria $criteria, &$fromClause, $aliasAll = false)
+	{
+		$selectClause = array();
+		
+		if ($aliasAll) {
+			self::turnSelectColumnsToAliases($criteria);
+			// no select columns after that, they are all aliases
+		} else {
+			foreach ($criteria->getSelectColumns() as $columnName) {
+
+				// expect every column to be of "table.column" formation
+				// it could be a function:  e.g. MAX(books.price)
+
+				$tableName = null;
+
+				$selectClause[] = $columnName; // the full column name: e.g. MAX(books.price)
+
+				$parenPos = strrpos($columnName, '(');
+				$dotPos = strrpos($columnName, '.', ($parenPos !== false ? $parenPos : 0));
+
+				if ($dotPos !== false) {
+					if ($parenPos === false) { // table.column
+						$tableName = substr($columnName, 0, $dotPos);
+					} else { // FUNC(table.column)
+						// functions may contain qualifiers so only take the last
+						// word as the table name.
+						// COUNT(DISTINCT books.price)
+						$lastSpace = strpos($tableName, ' ');
+						if ($lastSpace !== false) { // COUNT(DISTINCT books.price)
+							$tableName = substr($tableName, $lastSpace + 1);
+						} else {
+							$tableName = substr($columnName, $parenPos + 1, $dotPos - ($parenPos + 1));
+						}
+					}
+					// is it a table alias?
+					$tableName2 = $criteria->getTableForAlias($tableName);
+					if ($tableName2 !== null) {
+						$fromClause[] = $tableName2 . ' ' . $tableName;
+					} else {
+						$fromClause[] = $tableName;
+					}
+				} // if $dotPost !== false
+			}
+		}
+		
+		// set the aliases
+		foreach ($criteria->getAsColumns() as $alias => $col) {
+			$selectClause[] = $col . ' AS ' . $alias;
+		}
+
+		$selectModifiers = $criteria->getSelectModifiers();
+		
+		// Build the SQL from the arrays we compiled
+		$sql =  "SELECT " 
+		. ($selectModifiers ? (implode(' ', $selectModifiers) . ' ') : '')
+		. implode(", ", $selectClause);
 
 		return $sql;
 	}

@@ -1,23 +1,11 @@
 <?php
 
-/*
- *  $Id: PropelOnDemandCollection.php $
+/**
+ * This file is part of the Propel package.
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * This software consists of voluntary contributions made by many individuals
- * and is licensed under the LGPL. For more information please see
- * <http://propel.phpdb.org>.
+ * @license    MIT License
  */
 
 /**
@@ -26,94 +14,24 @@
  * @author     Francois Zaninotto
  * @package    propel.runtime.collection
  */
-class PropelOnDemandCollection extends PropelCollection implements Iterator
+class PropelOnDemandCollection extends PropelCollection
 {
-	protected 
-		$stmt, 
+	protected
+		$iterator,
 		$currentRow, 
 		$currentKey = -1,
 		$isValid = null;
 	
-	public function setStatement(PDOStatement $stmt)
+	public function initIterator(PropelFormatter $formatter, PDOStatement $stmt)
 	{
-		$this->stmt = $stmt;
-	}
-	
-	public function closeCursor()
-	{
-		$this->stmt->closeCursor();
+		$this->iterator = new PropelOnDemandIterator($formatter, $stmt);
 	}
 	
 	// IteratorAggregate Interface
 	
 	public function getIterator()
 	{
-		return $this;
-	}
-
-	// Iterator Interface
-	
-	/**
-	 * Gets the current Model object in the collection
-	 * This is where the hydration takes place.
-	 *
-	 * @see PropelObjectFormatter::getAllObjectsFromRow()
-	 *
-	 * @return    BaseObject
-	 */
-	public function current()
-	{
-		return $this->formatter->getAllObjectsFromRow($this->currentRow);
-	}
-	
-	/**
-	 * Gets the current key in the iterator
-	 *
-	 * @return    string
-	 */
-	public function key()
-	{
-		return $this->currentKey;
-	}
-	
-	/**
-	 * Advances the curesor in the statement
-	 * Closes the cursor if the end of the statement is reached
-	 */
-	public function next()
-	{
-		$this->currentRow = $this->stmt->fetch(PDO::FETCH_NUM);
-		$this->currentKey++;
-		$this->isValid = (boolean) $this->currentRow;
-		if (!$this->isValid) {
-			$this->closeCursor();
-		}
-	}
-	
-	/**
-	 * Initializes the iterator by advancing to the first position
-	 * This method can only be called once (this is a NoRewindIterator)
-	 */
-	public function rewind()
-	{
-		// check that the hydration can begin
-		if (null === $this->formatter) {
-			throw new PropelException('The On Demand collection requires a formatter. Add it by calling setFormatter()');
-		}
-		if (null === $this->stmt) {
-			throw new PropelException('The On Demand collection requires a statement. Add it by calling setStatement()');
-		}
-		if (null !== $this->isValid) {
-			throw new PropelException('The On Demand collection can only be iterated once');
-		}
-		
-		// initialize the current row and key
-		$this->next();
-	}
-	
-	public function valid()
-	{
-		return $this->isValid;
+		return $this->iterator;
 	}
 
 	// ArrayAccess Interface
@@ -166,7 +84,7 @@ class PropelOnDemandCollection extends PropelCollection implements Iterator
 	 */
 	public function count()
 	{
-		return $this->stmt->rowCount();
+		return $this->iterator->count();
 	}
 	
 	// ArrayObject methods
