@@ -21,21 +21,20 @@
  * @param Smarty
  * @return string|null
  */
-function smarty_function_javascript_form_validation_button($params, &$smarty)
-{
+function smarty_function_javascript_form_validation_button($params, &$smarty){
     
-	if (empty($params['value'])) {
+	if (empty($params['value']))
 		$buttonName = 'Submit';
-	}
-	else {
+	else
 		$buttonName = $params['value'];
-	}
-	$output = "<input type='button' value='" . $buttonName . "' onClick='javascript:validationValidateFormClienSide(this.form);'>";
+
+	if (empty($params['title']))
+		$buttonTitle = $buttonName;
+	else
+		$buttonTitle = $params['title'];
+
+	$output = "<input type='button' value='" . $buttonName . "' title='" . $buttonTitle . "' onClick='javascript:validationValidateFormClienSide(this.form);'>";
 	
 	return $output;
 
 }
-
-/* vim: set expandtab: */
-
-?>
