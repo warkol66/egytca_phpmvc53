@@ -9,6 +9,6 @@
  * -------------------------------------------------------------
  */
 function smarty_modifier_disabled($value){
-	if ($value == "readonly" || $value="showLog")
+	if ($value == "readonly" || $value == "showLog")
 		return 'disabled="true" class="readOnly"';
 }

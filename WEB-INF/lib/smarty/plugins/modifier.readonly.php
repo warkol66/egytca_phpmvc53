@@ -9,6 +9,7 @@
  * -------------------------------------------------------------
  */
 function smarty_modifier_readonly($value){
-	if ($value == "readonly" || $value="showLog")
+	if ($value == "readonly" || $value == "showLog")
 		return 'readonly="readonly" class="readOnly"';
+	return '';
 }
