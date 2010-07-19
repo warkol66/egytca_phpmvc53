@@ -475,7 +475,7 @@ class RequestProcessor {
 			}
 
 			// $path = "{http://}www.myhost.com/..."
-			if( !preg_match("/^([a-z]+):///i", $path) ) {
+			if( !preg_match("/^([a-z]+):\/\//i", $path) ) {
 
 				if($scheme == 'http' || $scheme == 'https' || $scheme == 'ftp') {
 					$pathScheme = $scheme.'://';
