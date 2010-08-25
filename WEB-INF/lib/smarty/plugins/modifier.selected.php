@@ -8,7 +8,7 @@
  * -------------------------------------------------------------
  */
 function smarty_modifier_selected($value1,$value2){
-	if ($value1 == $value2)
+	if ($value1 === $value2)
 		return 'selected="selected"';
 	return '';
 }
