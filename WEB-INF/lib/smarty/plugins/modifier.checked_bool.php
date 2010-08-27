@@ -4,11 +4,11 @@
  * Smarty plugin
  * -------------------------------------------------------------
  * Type:     modifier
- * Name:     checked
- * Purpose:  Devuelve el checked="checked" si el valor1 es igual a valor2
+ * Name:     checked_bool
+ * Purpose:  Devuelve el checked="checked" si el valor es 1
  * -------------------------------------------------------------
  */
-function smarty_modifier_checked($value1,$value2){
-	if ($value1 == $value2)
+function smarty_modifier_checked_bool($value){
+	if ($value == 1)
 		return 'checked="checked"';
 }
