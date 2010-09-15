@@ -779,7 +779,74 @@ class RequestProcessor {
 			$request->setAttribute(Action::getKey('MAPPING_KEY'), $mapping);
 			return $mapping;
 		}
+		
+		//obtengo el modulo a partir del path
+		$match = preg_split("/[A-Z]/", $path);
+		if (count($match) > 1) {
+			$module = $match[0];
 
+			//chequeo si existe el action correspondiente
+			global $moduleRootDir;
+			$expectedFile = $moduleRootDir."WEB-INF/classes/modules/".$module."/actions/".ucwords($path)."Action.php";
+			//echo $expectedFile;
+			if (file_exists($expectedFile)) {
+
+				$newActionConfig = new ActionConfig();
+				$newActionConfig->setName($path);
+				$newActionConfig->setPath($path);
+				$newActionConfig->setType(ucwords($path)."Action");
+				
+				//los forwards dependen del tipo de accion
+				//moduloList -> [success -> ModuloList.tpl]
+				//ModuloEdit -> [success -> ModuloEdit.tpl]
+				//ModuleDoEdit -> [success -> /Main.php?do=ModuloList&amp;message=ok, redirect="true", failure -> ModuleEdit.tpl]
+				//ModuleDoDelete -> [success -> /Main.php?do=ModuloList&amp;message=ok, redirect="true"]
+				//Por Defecto -> [success -> Path.tpl]
+				
+				$forwardsRules = array();
+				$forwardsRules["DoEdit"] = array();
+				$forwardsRules["DoEdit"]["success"] = "/Main.php?do=MODULEList&message=ok";
+				$forwardsRules["DoEdit"]["failure"] = "MODULEEdit.tpl";
+				$forwardsRules["DoDelete"] = array();
+				$forwardsRules["DoDelete"]["success"] = "/Main.php?do=MODULEList&message=ok";		
+				
+				$action = str_replace($module,"",$path);
+				
+				$forwards = $forwardsRules[$action];
+				
+				//si el forward tiene alguna regla especial
+				if (!empty($forwards)) {
+					foreach ($forwards as $forwardName => $forwardPath) {
+						$forwardObject = new ForwardConfig();
+						$forwardObject->setName($forwardName);
+						
+						//si no termina en tpl le pongo redirect true
+						if (substr($forwardPath, strlen($forwardPath)-3) != "tpl") {
+							$forwardObject->setRedirect(true);
+							$moduleForPath = $module;
+						} else {
+							$moduleForPath = ucwords($module);
+						}
+							
+						//obtengo el path reemplazando MODULE por el modulo real	
+						$forwardObject->setPath(str_replace("MODULE", $moduleForPath, $forwardPath));
+											
+						$newActionConfig->addForwardConfig($forwardObject);						
+					}
+				} else {
+				//sino es un forward que usamos las reglas por defecto
+					$successForward = new ForwardConfig();
+					$successForward->setName("success");
+					$successForward->setPath(ucwords($path).".tpl");
+					$newActionConfig->addForwardConfig($successForward);					
+				}
+				
+				$this->appConfig->addActionConfig($newActionConfig);
+				$mapping = $this->appConfig->findActionConfig($path);
+				return $mapping;
+			}			
+		}
+		
 		// Locate the mapping for unknown paths (if any)
 		$configs = NULL;
 		$configs = $this->appConfig->findActionConfigs(); // ActionConfig
@@ -793,7 +860,6 @@ class RequestProcessor {
 				}
 			}
 		}
-
 
 		// No mapping can be found to process this request
 		#$this->log->error($this->getInternal()->getMessage("processInvalid", $path));
