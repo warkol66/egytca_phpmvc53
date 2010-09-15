@@ -364,11 +364,13 @@ class ApplicationConfig {
 	* @returns void
 	*/
 	function addActionConfig($config) {
-
+		/*
+		Comentado para phpmvc-config dinamico
 		if($this->getConfigured()) {
 			#throw new IllegalStateException("Configuration is frozen");
 			return;
 		}
+		*/
 
 		$config->setApplicationConfig($this);
 		$path = $config->getPath();
