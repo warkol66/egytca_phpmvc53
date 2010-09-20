@@ -91,6 +91,29 @@ class BootUtils {
 				// need to reinitialise the application
 				$initXMLConfig = True;
 			}
+
+			//sino me fijo si no cambio algun xml de algun modulo
+			if (!$initXMLConfig) {
+				global $moduleRootDir;
+				$modulesPath = $moduleRootDir."WEB-INF/classes/modules";
+	
+				$modules = scandir($modulesPath);
+				$i = 0;
+				while ($i<count($modules) && !$initXMLConfig) {
+					$module = $modules[$i];
+					if (substr("$module", -1) != "." && $module != ".svn" && is_dir($modulesPath.'/'.$module)) {
+						$expectedFile = $moduleRootDir."WEB-INF/classes/modules/".$module."/setup/phpmvc-config-".$module.".xml";
+						if (file_exists($expectedFile)) {
+							$cfgXMLMTime	= filemtime($expectedFile);
+							if($cfgXMLMTime > $cfgDataMTime) {
+								$initXMLConfig = True;
+							}
+						}
+					}
+					$i++;
+				}	
+			}
+			
 		}
 
 		// Unserialise	the application config data
@@ -146,9 +169,34 @@ class BootUtils {
 		// Compile this application configuration file
 		if($initXMLConfig) {
 
+			//genero phpmvc-config-all.xml con el config base y todos los config de cada modulo
+			global $moduleRootDir;
+			$modulesPath = $moduleRootDir."WEB-INF/classes/modules";
+			$xmlPath = $moduleRootDir."WEB-INF/".$phpmvcConfigXMLFile;
+			$fullXmlPath = $moduleRootDir."WEB-INF/phpmvc-config-all.xml";
+			$xmlContent = file_get_contents($xmlPath);
+			
+			$xmlContent = str_replace("</phpmvc-config>", "", $xmlContent);
+
+			$modules = scandir($modulesPath);
+			foreach ($modules as $module) {
+				if (substr("$module", -1) != "." && $module != ".svn" && is_dir($modulesPath.'/'.$module)) {
+					$expectedFile = $moduleRootDir."WEB-INF/classes/modules/".$module."/setup/phpmvc-config-".$module.".xml";
+					if (file_exists($expectedFile)) {
+						$content = file_get_contents($expectedFile);
+						$xmlContent .= $content;
+					}
+				}
+			}
+			
+			$xmlContent .= "</phpmvc-config>";
+			
+			file_put_contents($fullXmlPath, $xmlContent);
+
+
 			// Set the relative path to the application xml configuration file.
 			// Something like: './WEB-INF/phpmvc-config.xml'.
-			$actionServer->setConfigPath($configPath.'/'.$phpmvcConfigXMLFile);
+			$actionServer->setConfigPath($configPath.'/phpmvc-config-all.xml');
 
 			// Initialise the php.MVC Web application
 			// Note: 
