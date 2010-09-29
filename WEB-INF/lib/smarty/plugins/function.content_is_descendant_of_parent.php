@@ -23,8 +23,6 @@
 function smarty_function_content_is_descendant_of_parent($params, &$smarty)
 {
 
-	require_once('Content.class.php');
-
 	$parentId = $params['parentId'];
 	$id = $params['id'];
 

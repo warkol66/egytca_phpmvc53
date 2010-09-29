@@ -23,8 +23,6 @@
 function smarty_modifier_content_is_descendant_of_parent($contentId,$parentId)
 {
 
-	require_once('Content.class.php');
-
 	$content = new Content();
 	
 	return $content->isContentDescendant($parentId,$contentId);
