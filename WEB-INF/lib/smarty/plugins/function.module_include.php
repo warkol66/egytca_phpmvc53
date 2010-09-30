@@ -1,34 +1,19 @@
 <?php
 
-function explode_assoc($glue1, $glue2, $array)
-{
-  $array2=explode($glue2, $array);
-  foreach($array2 as  $val) {
-    $pos=strpos($val,$glue1);
-    $key=substr($val,0,$pos);
-    $array3[$key] =substr($val,$pos+1,strlen($val));
-  }
-  return $array3;
-}
-
-//usage:
-//$str="key1=val1&key2=val2&key3=val3";
-//$array=explode_assoc('=','&',$str);
-
-
-function smarty_function_include_module($params, &$smarty)
+function smarty_function_module_include($params, &$smarty)
 {  
     $module = $params['module'];
     $action = $params['action'];
-    $optionsString = $params['options'];
-    $options = explode_assoc('=','&',$optionsString);
-    
+    parse_str($params['options'],$options);
+
     //include la clase include correspondiente y obtengo su resultado en $result
-    $includeObject = new $module();
+
+		$objectPeer = $module . "Peer";
+    $object = new $objectPeer();
     $method = "get".$action;
-    $result = $includeObject->$method($options);
+    $result = $object->$method($options);
     $smarty->assign("result",$result);
-    
+
     //Debo cambiarle el outputfilter para poder usar otro external
     $smartyOutputFilter = new SmartyOutputFilter();
     $smartyOutputFilter->template = 'TemplateInclude.tpl';
@@ -41,24 +26,40 @@ function smarty_function_include_module($params, &$smarty)
       $mapping = $vars["mapping"];
       $applicationConfig = $mapping->getApplicationConfig();
       $actionPath = $module.$action;
-      $actionPath[0] = strtolower($actionPath[0]);
+			if (function_exists('lcfirst') === false)
+	      $actionPath = strtolower(substr($actionPath,0,1)).substr($actionPath,1);
+	     else
+      	$actionPath = lcfirst($actionPath);
+      
       $actionConfig = $applicationConfig->findActionConfig($actionPath);
-      if (!empty($_SESSION["loginUser"])) {
-        $smarty->assign("loginUser",$_SESSION["loginUser"]);
-        $forwardConfig = $actionConfig->findForwardConfig("includeLogged"); 
-      }
-      else
-        $forwardConfig = $actionConfig->findForwardConfig("includeNotLogged"); 
- 
-      if (empty($forwardConfig))
-        $forwardConfig = $actionConfig->findForwardConfig("include"); 
- 
-      //obtengo el template
-      $template = $forwardConfig->getPath();
+
+			if (is_object($actionConfig)) {
+
+	      if (!empty($_SESSION["loginUser"])) {
+	        $smarty->assign("loginUser",$_SESSION["loginUser"]);
+	        $forwardConfig = $actionConfig->findForwardConfig("includeLogged"); 
+	      }
+	      else if (!empty($_SESSION["loginAffiliateUser"])) {
+	        $smarty->assign("loginAffiliateUser",$_SESSION["loginAffiliateUser"]);
+	        $forwardConfig = $actionConfig->findForwardConfig("includeAffiliateUserLogged"); 
+	      }
+	      else if (!empty($_SESSION["loginRegistrationUser"])) {
+	        $smarty->assign("loginRegistrationUser",$_SESSION["loginRegistrationUser"]);
+	        $forwardConfig = $actionConfig->findForwardConfig("includeRegistrationUserLogged"); 
+	      }
+	      else
+	        $forwardConfig = $actionConfig->findForwardConfig("includeNotLogged"); 
+	 
+	      if (empty($forwardConfig))
+	        $forwardConfig = $actionConfig->findForwardConfig("include"); 
+	 
+	      //obtengo el template
+	      $template = $forwardConfig->getPath();
+    	}
     } 
     else
       $template = $options['template'];
-        
+
     //Obtengo el html resultante
 		if( !$smarty->template_exists($template) )
 			echo "NO EXISTE TEMPLATE: '".$template."'.";
@@ -70,5 +71,3 @@ function smarty_function_include_module($params, &$smarty)
 
     return $html_result;
 }
-
-/* vim: set expandtab: */
