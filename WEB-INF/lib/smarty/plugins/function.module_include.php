@@ -2,13 +2,14 @@
 
 function smarty_function_module_include($params, &$smarty)
 {  
+    $entity = $params['entity'];
     $module = $params['module'];
     $action = $params['action'];
     parse_str($params['options'],$options);
 
     //include la clase include correspondiente y obtengo su resultado en $result
 
-		$objectPeer = $module . "Peer";
+		$objectPeer = $entity . "Peer";
     $object = new $objectPeer();
     $method = "get".$action;
     $result = $object->$method($options);
