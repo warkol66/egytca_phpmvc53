@@ -9,11 +9,21 @@ function smarty_function_module_include($params, &$smarty)
 
     //include la clase include correspondiente y obtengo su resultado en $result
 
-		$objectPeer = $entity . "Peer";
-    $object = new $objectPeer();
-    $method = "get".$action;
-    $result = $object->$method($options);
-    $smarty->assign("result",$result);
+		if (!empty($entity)) {
+			$objectPeer = $entity . "Peer";
+	    $object = new $objectPeer();
+	    $method = "get".$action;
+	    $result = $object->$method($options);
+	    $smarty->assign("result",$result);
+  	}
+  	else{
+	    $include = $params['module']."Include";	    
+	    require_once($include.".php");
+	    $includeObject = new $include();
+	    $method = "get".$action;
+	    $result = $includeObject->$method($options);
+	    $smarty->assign("result",$result);
+  	}
 
     //Debo cambiarle el outputfilter para poder usar otro external
     $smartyOutputFilter = new SmartyOutputFilter();
