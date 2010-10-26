@@ -812,7 +812,20 @@ class RequestProcessor {
 				
 				$action = str_replace($module,"",$path);
 				
-				$forwards = $forwardsRules[$action];
+				$forwards = false;
+				$moduleSection = "";
+
+				//function para tener before_filter en php < 5.3
+				function strstrb($h,$n){
+				    return array_shift(explode($n,$h,2));
+				}
+				
+				foreach ($forwardsRules as $key => $rules) {
+					if (preg_match("/".$key."$/",$action)) {
+						$forwards = $rules;
+						$moduleSection = strstrb($action, $key);
+					}
+				} 
 				
 				//si el forward tiene alguna regla especial
 				if (!empty($forwards)) {
@@ -823,9 +836,9 @@ class RequestProcessor {
 						//si no termina en tpl le pongo redirect true
 						if (substr($forwardPath, strlen($forwardPath)-3) != "tpl") {
 							$forwardObject->setRedirect(true);
-							$moduleForPath = $module;
+							$moduleForPath = $module . $moduleSection;
 						} else {
-							$moduleForPath = ucwords($module);
+							$moduleForPath = ucwords($module) . $moduleSection;
 						}
 							
 						//obtengo el path reemplazando MODULE por el modulo real	
