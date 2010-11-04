@@ -807,6 +807,7 @@ class RequestProcessor {
 				$forwardsRules["DoEdit"] = array();
 				$forwardsRules["DoEdit"]["success"] = "/Main.php?do=MODULEList&message=ok";
 				$forwardsRules["DoEdit"]["success-add"] = "/Main.php?do=MODULEEdit&message=ok";
+				$forwardsRules["DoEdit"]["success-edit"] = "/Main.php?do=MODULEEdit&message=ok";
 				$forwardsRules["DoEdit"]["failure"] = "MODULEEdit.tpl";
 				$forwardsRules["DoDelete"] = array();
 				$forwardsRules["DoDelete"]["success"] = "/Main.php?do=MODULEList&message=ok";		
