@@ -28,7 +28,7 @@ require_once $smarty->_get_plugin_filepath('shared', 'make_timestamp');
  * @return string|void
  * @uses smarty_make_timestamp()
  */
-function smarty_modifier_date_format($string, $format = '', $default_date = '')
+function smarty_modifier_system_date_format($string, $format = '', $default_date = '')
 {
     //modificacion para uso del formato por default del sistema
 	if ($format == '') {
