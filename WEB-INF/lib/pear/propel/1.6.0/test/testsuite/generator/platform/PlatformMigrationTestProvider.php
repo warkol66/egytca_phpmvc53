@@ -62,7 +62,7 @@ EOF;
 		$d2 = $this->getDatabaseFromSchema($schema2);
 		return array(array(PropelDatabaseComparator::computeDiff($d1, $d2)));
 	}
-	
+
 	public function providerForTestGetRenameTableDDL()
 	{
 		return array(array('foo1', 'foo2'));
@@ -125,7 +125,7 @@ EOF;
 		$t2 = $this->getDatabaseFromSchema($schema2)->getTable('foo');
 		return array(array(PropelTableComparator::computeDiff($t1,$t2)));
 	}
-	
+
 	public function providerForTestGetModifyTableColumnsDDL()
 	{
 		$schema1 = <<<EOF
@@ -172,7 +172,7 @@ EOF;
 	<table name="foo">
 		<column name="id" primaryKey="true" type="INTEGER" />
 		<column name="bar" type="INTEGER" primaryKey="true" />
-		<column name="baz" type="VARCHAR" size="12" required="false" />	
+		<column name="baz" type="VARCHAR" size="12" required="false" />
 	</table>
 </database>
 EOF;
@@ -184,7 +184,7 @@ EOF;
 		$tc->comparePrimaryKeys();
 		return array(array($tc->getTableDiff()));
 	}
-	
+
 	public function providerForTestGetModifyTableIndicesDDL()
 	{
 		$schema1 = <<<EOF
@@ -282,6 +282,85 @@ EOF;
 		return array(array($tc->getTableDiff()));
 	}
 
+	public function providerForTestGetModifyTableForeignKeysSkipSqlDDL()
+	{
+		$schema1 = <<<EOF
+<database name="test">
+	<table name="foo1">
+		<column name="id" primaryKey="true" type="INTEGER" autoIncrement="true" />
+		<column name="bar" type="INTEGER" />
+		<foreign-key name="foo1_FK_1" foreignTable="foo2">
+			<reference local="bar" foreign="bar" />
+		</foreign-key>
+	</table>
+	<table name="foo2">
+		<column name="id" primaryKey="true" type="INTEGER" autoIncrement="true" />
+		<column name="bar" type="INTEGER" />
+	</table>
+</database>
+EOF;
+		$schema2 = <<<EOF
+<database name="test">
+	<table name="foo1">
+		<column name="id" primaryKey="true" type="INTEGER" autoIncrement="true" />
+		<column name="bar" type="INTEGER" />
+		<foreign-key name="foo1_FK_1" foreignTable="foo2" skipSql="true">
+			<reference local="bar" foreign="bar" />
+		</foreign-key>
+	</table>
+	<table name="foo2">
+		<column name="id" primaryKey="true" type="INTEGER" autoIncrement="true" />
+		<column name="bar" type="INTEGER" />
+	</table>
+</database>
+EOF;
+		$t1 = $this->getDatabaseFromSchema($schema1)->getTable('foo1');
+		$t2 = $this->getDatabaseFromSchema($schema2)->getTable('foo1');
+		$tc = new PropelTableComparator();
+		$tc->setFromTable($t1);
+		$tc->setToTable($t2);
+		$tc->compareForeignKeys();
+		return array(array($tc->getTableDiff()));
+	}
+
+	public function providerForTestGetModifyTableForeignKeysSkipSql2DDL()
+	{
+		$schema1 = <<<EOF
+<database name="test">
+	<table name="foo1">
+		<column name="id" primaryKey="true" type="INTEGER" autoIncrement="true" />
+		<column name="bar" type="INTEGER" />
+		<foreign-key name="foo1_FK_1" foreignTable="foo2" skipSql="true">
+			<reference local="bar" foreign="bar" />
+		</foreign-key>
+	</table>
+	<table name="foo2">
+		<column name="id" primaryKey="true" type="INTEGER" autoIncrement="true" />
+		<column name="bar" type="INTEGER" />
+	</table>
+</database>
+EOF;
+		$schema2 = <<<EOF
+<database name="test">
+	<table name="foo1">
+		<column name="id" primaryKey="true" type="INTEGER" autoIncrement="true" />
+		<column name="bar" type="INTEGER" />
+	</table>
+	<table name="foo2">
+		<column name="id" primaryKey="true" type="INTEGER" autoIncrement="true" />
+		<column name="bar" type="INTEGER" />
+	</table>
+</database>
+EOF;
+		$t1 = $this->getDatabaseFromSchema($schema1)->getTable('foo1');
+		$t2 = $this->getDatabaseFromSchema($schema2)->getTable('foo1');
+		$tc = new PropelTableComparator();
+		$tc->setFromTable($t1);
+		$tc->setToTable($t2);
+		$tc->compareForeignKeys();
+		return array(array($tc->getTableDiff()));
+	}
+
 	public function providerForTestGetRemoveColumnDDL()
 	{
 		$table = new Table('foo');
@@ -289,7 +368,7 @@ EOF;
 		$table->addColumn($column);
 		return array(array($column));
 	}
-	
+
 	public function providerForTestGetRenameColumnDDL()
 	{
 		$t1 = new Table('foo');
@@ -306,7 +385,7 @@ EOF;
 		$t2->addColumn($c2);
 		return array(array($c1, $c2));
 	}
-	
+
 	public function providerForTestGetModifyColumnDDL()
 	{
 		$t1 = new Table('foo');
@@ -344,11 +423,11 @@ EOF;
 		$c4->setNotNull(true);
 		$t2->addColumn($c4);
 		return array(array(array(
-			PropelColumnComparator::computeDiff($c1, $c3), 
+			PropelColumnComparator::computeDiff($c1, $c3),
 			PropelColumnComparator::computeDiff($c2, $c4)
 		)));
 	}
-	
+
 	public function providerForTestGetAddColumnDDL()
 	{
 		$schema = <<<EOF
@@ -377,4 +456,5 @@ EOF;
 		$table = $this->getDatabaseFromSchema($schema)->getTable('foo');
 		return array(array(array($table->getColumn('bar1'), $table->getColumn('bar2'))));
 	}
+
 }

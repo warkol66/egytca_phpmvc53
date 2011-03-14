@@ -24,7 +24,7 @@
  * @author     Hans Lellelid <hans@xmpl.org> (Propel)
  * @author     Frank Y. Kim <frank.kim@clearink.com> (Torque)
  * @author     John D. McNally <jmcnally@collab.net> (Torque)
- * @version    $Revision: 2150 $
+ * @version    $Revision: 2168 $
  * @package    propel.runtime.om
  */
 abstract class BaseObject
@@ -371,7 +371,7 @@ abstract class BaseObject
 	 * Provides magic import/export method support (fromXML()/toXML(), fromYAML()/toYAML(), etc.).
 	 * Allows to define default __call() behavior if you use a custom BaseObject
 	 */ 
-	public function __call($name, $params) 
+	public function __call($name, $params)
 	{
 		if (preg_match('/^from(\w+)$/', $name, $matches)) {
 			return $this->importFrom($matches[1], reset($params));
@@ -379,6 +379,6 @@ abstract class BaseObject
 		if (preg_match('/^to(\w+)$/', $name, $matches)) {
 			return $this->exportTo($matches[1]);
 		}
-		throw new PropelException('Call to undefined method: ' . $name); 
+		throw new PropelException('Call to undefined method: ' . $name);
 	} 
 }

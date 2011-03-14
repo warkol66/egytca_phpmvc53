@@ -121,33 +121,38 @@ class PHP5ObjectBuilder extends ObjectBuilder
 	 */
 	protected function getDefaultValueString(Column $col)
 	{
-		$defaultValue = var_export(null, true);
-		if (($val = $col->getPhpDefaultValue()) !== null) {
-			if ($col->isTemporalType()) {
-				$fmt = $this->getTemporalFormatter($col);
-				try {
-					if (!($this->getPlatform() instanceof MysqlPlatform &&
-					($val === '0000-00-00 00:00:00' || $val === '0000-00-00'))) {
-						// while technically this is not a default value of NULL,
-						// this seems to be closest in meaning.
-						$defDt = new DateTime($val);
-						$defaultValue = var_export($defDt->format($fmt), true);
-					}
-				} catch (Exception $x) {
-					// prevent endless loop when timezone is undefined
-					date_default_timezone_set('America/Los_Angeles');
-					throw new EngineException(sprintf('Unable to parse default temporal value "%s" for column "%s"', $col->getDefaultValueString(), $col->getFullyQualifiedName()), $x);
+		$val = $col->getPhpDefaultValue();
+		if ($val === null) {
+			return var_export(null, true);
+		}
+		if ($col->isTemporalType()) {
+			$fmt = $this->getTemporalFormatter($col);
+			try {
+				if (!($this->getPlatform() instanceof MysqlPlatform &&
+				($val === '0000-00-00 00:00:00' || $val === '0000-00-00'))) {
+					// while technically this is not a default value of NULL,
+					// this seems to be closest in meaning.
+					$defDt = new DateTime($val);
+					$defaultValue = var_export($defDt->format($fmt), true);
 				}
-			} else {
-				if ($col->isPhpPrimitiveType()) {
-					settype($val, $col->getPhpType());
-					$defaultValue = var_export($val, true);
-				} elseif ($col->isPhpObjectType()) {
-					$defaultValue = 'new '.$col->getPhpType().'(' . var_export($val, true) . ')';
-				} else {
-					throw new EngineException("Cannot get default value string for " . $col->getFullyQualifiedName());
-				}
+			} catch (Exception $x) {
+				// prevent endless loop when timezone is undefined
+				date_default_timezone_set('America/Los_Angeles');
+				throw new EngineException(sprintf('Unable to parse default temporal value "%s" for column "%s"', $col->getDefaultValueString(), $col->getFullyQualifiedName()), $x);
 			}
+		} elseif ($col->isEnumType()) {
+			$valueSet = $col->getValueSet();
+			if (!in_array($val, $valueSet)) {
+				throw new EngineException(sprintf('Default Value "%s" is not among the enumerated values', $val));
+			}
+			$defaultValue = array_search($val, $valueSet);
+		} else if ($col->isPhpPrimitiveType()) {
+			settype($val, $col->getPhpType());
+			$defaultValue = var_export($val, true);
+		} elseif ($col->isPhpObjectType()) {
+			$defaultValue = 'new '.$col->getPhpType().'(' . var_export($val, true) . ')';
+		} else {
+			throw new EngineException("Cannot get default value string for " . $col->getFullyQualifiedName());
 		}
 		return $defaultValue;
 	}
@@ -650,19 +655,9 @@ abstract class ".$this->getClassname()." extends ".$parentClass." ";
 		$colconsts = array();
 		foreach ($colsWithDefaults as $col) {
 			$clo = strtolower($col->getName());
-			if ($col->isEnumType()) {
-				$defaultValue = $col->getPhpDefaultValue();
-				$valueSet = $col->getValueSet();
-				if (!in_array($defaultValue, $valueSet)) {
-					throw new EngineException(sprintf('Default Value "%s" is not among the enumerated values', $defaultValue));
-				}
-				$defaultValue = array_search($defaultValue, $valueSet);
-			} else {
-				$defaultValue = $this->getDefaultValueString($col);
-			}
+			$defaultValue = $this->getDefaultValueString($col);
 			$script .= "
 		\$this->".$clo." = $defaultValue;";
-
 		}
 	}
 
@@ -780,6 +775,23 @@ abstract class ".$this->getClassname()." extends ".$parentClass." ";
 		$script .= ")
 	{";
 	}
+	
+	protected function getAccessorLazyLoadSnippet(Column $col)
+	{
+		if ($col->isLazyLoad()) {
+			$clo = strtolower($col->getName());
+			$defaultValueString = 'null';
+			$def = $col->getDefaultValue();
+			if ($def !== null && !$def->isExpression()) {
+				$defaultValueString = $this->getDefaultValueString($col);
+			}
+			return "
+		if (!\$this->{$clo}_isLoaded && \$this->{$clo} === {$defaultValueString} && !\$this->isNew()) {
+			\$this->load{$col->getPhpName()}(\$con);
+		}
+";
+		}
+	}
 
 	/**
 	 * Adds the body of the temporal accessor
@@ -823,11 +835,7 @@ abstract class ".$this->getClassname()." extends ".$parentClass." ";
 		}
 
 		if ($col->isLazyLoad()) {
-			$script .= "
-		if (!\$this->".$clo."_isLoaded && \$this->$clo === null && !\$this->isNew()) {
-			\$this->load$cfc(\$con);
-		}
-";
+			$script .= $this->getAccessorLazyLoadSnippet($col);
 		}
 		$script .= "
 		if (\$this->$clo === null) {
@@ -918,11 +926,7 @@ abstract class ".$this->getClassname()." extends ".$parentClass." ";
 		$clo = strtolower($col->getName());
 		$cloUnserialized = $clo.'_unserialized';
 		if ($col->isLazyLoad()) {
-			$script .= "
-		if (!\$this->".$clo."_isLoaded && \$this->$clo === null && !\$this->isNew()) {
-			\$this->load$cfc(\$con);
-		}
-";
+			$script .= $this->getAccessorLazyLoadSnippet($col);
 		}
 
 		$script .= "
@@ -958,11 +962,7 @@ abstract class ".$this->getClassname()." extends ".$parentClass." ";
 		$clo = strtolower($col->getName());
 		$cloUnserialized = $clo.'_unserialized';
 		if ($col->isLazyLoad()) {
-			$script .= "
-		if (!\$this->".$clo."_isLoaded && \$this->$clo === null && !\$this->isNew()) {
-			\$this->load$cfc(\$con);
-		}
-";
+			$script .= $this->getAccessorLazyLoadSnippet($col);
 		}
 
 		$script .= "
@@ -1001,11 +1001,7 @@ abstract class ".$this->getClassname()." extends ".$parentClass." ";
 		$cfc = $col->getPhpName();
 		$clo = strtolower($col->getName());
 		if ($col->isLazyLoad()) {
-			$script .= "
-		if (!\$this->".$clo."_isLoaded && \$this->$clo === null && !\$this->isNew()) {
-			\$this->load$cfc(\$con);
-		}
-";
+			$script .= $this->getAccessorLazyLoadSnippet($col);
 		}
 
 		$script .= "
@@ -1116,11 +1112,7 @@ abstract class ".$this->getClassname()." extends ".$parentClass." ";
 		$cfc = $col->getPhpName();
 		$clo = strtolower($col->getName());
 		if ($col->isLazyLoad()) {
-			$script .= "
-		if (!\$this->".$clo."_isLoaded && \$this->$clo === null && !\$this->isNew()) {
-			\$this->load$cfc(\$con);
-		}
-";
+			$script .= $this->getAccessorLazyLoadSnippet($col);
 		}
 
 		$script .= "
@@ -4534,8 +4526,13 @@ abstract class ".$this->getClassname()." extends ".$parentClass." ";
 	public function clear()
 	{";
 		foreach ($table->getColumns() as $col) {
+			$clo = strtolower($col->getName());
 			$script .= "
-		\$this->" . strtolower($col->getName()) . " = null;";
+		\$this->".$clo." = null;";
+			if($col->isLazyLoad()){
+				$script .= "
+		\$this->".$clo."_isLoaded = false;";
+			}
 		}
 
 		$script .= "
@@ -4567,13 +4564,13 @@ abstract class ".$this->getClassname()." extends ".$parentClass." ";
 		$table = $this->getTable();
 		$script .= "
 	/**
-	 * Resets all collections of referencing foreign keys.
+	 * Resets all references to other model objects or collections of model objects.
 	 *
-	 * This method is a user-space workaround for PHP's inability to garbage collect objects
-	 * with circular references.  This is currently necessary when using Propel in certain
-	 * daemon or large-volumne/high-memory operations.
+	 * This method is a user-space workaround for PHP's inability to garbage collect
+	 * objects with circular references (even in PHP 5.3). This is currently necessary
+	 * when using Propel in certain daemon or large-volumne/high-memory operations.
 	 *
-	 * @param      boolean \$deep Whether to also clear the references on all associated objects.
+	 * @param      boolean \$deep Whether to also clear the references on all referrer objects.
 	 */
 	public function clearAllReferences(\$deep = false)
 	{
@@ -4582,21 +4579,20 @@ abstract class ".$this->getClassname()." extends ".$parentClass." ";
 		foreach ($this->getTable()->getReferrers() as $refFK) {
 			if ($refFK->isLocalPrimaryKey()) {
 				$varName = $this->getPKRefFKVarName($refFK);
-				$vars[] = $varName;
 				$script .= "
 			if (\$this->$varName) {
 				\$this->{$varName}->clearAllReferences(\$deep);
 			}";
 			} else {
 				$varName = $this->getRefFKCollVarName($refFK);
-				$vars[] = $varName;
 				$script .= "
 			if (\$this->$varName) {
-				foreach ((array) \$this->$varName as \$o) {
+				foreach (\$this->$varName as \$o) {
 					\$o->clearAllReferences(\$deep);
 				}
 			}";
 			}
+			$vars[] = $varName;
 		}
 
 		$script .= "
@@ -4607,11 +4603,13 @@ abstract class ".$this->getClassname()." extends ".$parentClass." ";
 
 		foreach ($vars as $varName) {
 			$script .= "
+		if (\$this->$varName instanceof PropelCollection) {
+			\$this->{$varName}->clearIterator();
+		}
 		\$this->$varName = null;";
 		}
 
 		foreach ($table->getForeignKeys() as $fk) {
-			$className = $this->getForeignTable($fk)->getPhpName();
 			$varName = $this->getFKVarName($fk);
 			$script .= "
 		\$this->$varName = null;";

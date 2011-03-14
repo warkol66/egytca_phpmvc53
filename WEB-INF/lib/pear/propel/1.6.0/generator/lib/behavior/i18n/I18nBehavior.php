@@ -16,7 +16,7 @@ require_once dirname(__FILE__) . '/I18nBehaviorPeerBuilderModifier.php';
  * Allows translation of text columns through transparent one-to-many relationship
  *
  * @author    Francois Zaninotto
- * @version		$Revision: 2153 $
+ * @version		$Revision: 2202 $
  * @package		propel.generator.behavior.i18n
  */
 class I18nBehavior extends Behavior
@@ -32,6 +32,8 @@ class I18nBehavior extends Behavior
 		'default_locale' => null,
 		'locale_alias'  => '',
 	);
+	
+	protected $tableModificationOrder = 70;
 	
 	protected 
 		$objectBuilderModifier,
@@ -74,6 +76,10 @@ class I18nBehavior extends Behavior
 				'schema'    => $table->getSchema(),
 				'namespace' => $table->getNamespace(),
 			));
+			// every behavior adding a table should re-execute database behaviors
+			foreach ($database->getBehaviors() as $behavior) {
+				$behavior->modifyDatabase();
+			}
 		}
 	}
 	
@@ -133,11 +139,18 @@ class I18nBehavior extends Behavior
 				if (!$table->hasColumn($columnName)) {
 					throw new EngineException(sprintf('No column named %s found in table %s', $columnName, $table->getName()));
 				}
-				$i18nTable->addColumn(clone $table->getColumn($columnName));
-				// FIXME: also move FKs, indices, and validators on this column
+				$column = $table->getColumn($columnName);
+				// add the column
+				$i18nColumn = $i18nTable->addColumn(clone $column);
+				// add related validators
+				if ($validator = $column->getValidator()) {
+					$i18nValidator = $i18nTable->addValidator(clone $validator);
+				}
+				// FIXME: also move FKs, and indices on this column
 			}
 			if ($table->hasColumn($columnName)) {
 				$table->removeColumn($columnName);
+				$table->removeValidatorForColumn($columnName);
 			}
 		}
 	}
@@ -200,9 +213,20 @@ class I18nBehavior extends Behavior
 	public function getI18nColumns()
 	{
 		$columns = array();
-		foreach ($this->getI18nTable()->getColumns() as $column) {
-			if (!$column->isPrimaryKey()) {
-				$columns []= $column;
+		$i18nTable = $this->getI18nTable();
+		if ($columnNames = $this->getI18nColumnNamesFromConfig()) {
+			// Strategy 1: use the i18n_columns parameter
+			foreach ($columnNames as $columnName) {
+				$columns []= $i18nTable->getColumn($columnName);
+			}
+		} else {
+			// strategy 2: use the columns of the i18n table
+			// warning: does not work when database behaviors add columns to all tables
+			// (such as timestampable behavior)
+			foreach ($i18nTable->getColumns() as $column) {
+				if (!$column->isPrimaryKey()) {
+					$columns []= $column;
+				}
 			}
 		}
 		

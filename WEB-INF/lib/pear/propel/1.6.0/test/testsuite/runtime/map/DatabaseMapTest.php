@@ -14,11 +14,11 @@ require_once dirname(__FILE__) . '/../../../tools/helpers/bookstore/BookstoreTes
  * Test class for DatabaseMap.
  *
  * @author     François Zaninotto
- * @version    $Id: DatabaseMapTest.php 1833 2010-07-19 21:52:20Z francois $
+ * @version    $Id: DatabaseMapTest.php 2168 2011-01-20 15:07:57Z francois $
  * @package    runtime.map
  */
 class DatabaseMapTest extends BookstoreTestBase 
-{ 
+{
   protected $databaseMap;
 
   protected function setUp()

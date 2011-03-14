@@ -18,7 +18,7 @@ require_once dirname(__FILE__) . '/../../../../../runtime/lib/Propel.php';
  * Tests for VersionableBehavior class
  *
  * @author     François Zaninotto
- * @version    $Revision: 2125 $
+ * @version    $Revision: 2168 $
  * @package    generator.behavior.versionable
  */
 class VersionableBehaviorObjectBuilderModifierTest extends PHPUnit_Framework_TestCase
@@ -302,7 +302,7 @@ EOF;
 		$a = new VersionableBehaviorTest4();
 		$a->setBar(123); // a1
 		$b = new VersionableBehaviorTest5();
-		$b->setFoo('Hello'); 
+		$b->setFoo('Hello');
 		$b->setVersionableBehaviorTest4($a);
 		$b->save(); //b1
 		$a->setBar(456); //a2
@@ -544,7 +544,7 @@ EOF;
 		$a = new VersionableBehaviorTest4();
 		$a->setBar(123); // a1
 		$b = new VersionableBehaviorTest5();
-		$b->setFoo('Hello'); 
+		$b->setFoo('Hello');
 		$b->setVersionableBehaviorTest4($a);
 		$b->save(); //b1
 		$this->assertEquals($b->getVersion(), 1);

@@ -18,11 +18,11 @@ require_once dirname(__FILE__) . '/../../../../runtime/lib/map/TableMap.php';
  * Test class for RelationMap.
  *
  * @author     François Zaninotto
- * @version    $Id: RelationMapTest.php 1833 2010-07-19 21:52:20Z francois $
+ * @version    $Id: RelationMapTest.php 2168 2011-01-20 15:07:57Z francois $
  * @package    runtime.map
  */
 class RelationMapTest extends PHPUnit_Framework_TestCase 
-{ 
+{
   protected $databaseMap, $relationName, $rmap;
 
   protected function setUp()

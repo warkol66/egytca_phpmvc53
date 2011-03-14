@@ -14,7 +14,7 @@ require_once dirname(__FILE__) . '/DefaultPlatform.php';
  * SQLite PropelPlatformInterface implementation.
  *
  * @author     Hans Lellelid <hans@xmpl.org>
- * @version    $Revision: 2076 $
+ * @version    $Revision: 2168 $
  * @package    propel.generator.platform
  */
 class SqlitePlatform extends DefaultPlatform
@@ -114,7 +114,7 @@ class SqlitePlatform extends DefaultPlatform
 		$pattern = "
 -- SQLite does not support foreign keys; this is just for reference
 -- FOREIGN KEY (%s) REFERENCES %s (%s)
-"; 
+";
 		return sprintf($pattern, 
 			$this->getColumnListDDL($fk->getLocalColumns()),
 			$fk->getForeignTableName(),

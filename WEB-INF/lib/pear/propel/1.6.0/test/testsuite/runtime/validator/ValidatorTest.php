@@ -1,7 +1,7 @@
 <?php
 
 /**
- * $Id: ValidatorTest.php 1833 2010-07-19 21:52:20Z francois $
+ * $Id: ValidatorTest.php 2176 2011-01-21 22:34:44Z francois $
  * This file is part of the Propel package.
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -208,7 +208,7 @@ class ValidatorTest extends BookstoreEmptyTestBase
 		$this->assertEquals(array(BookPeer::ISBN), array_keys($failures), "Expected EMAIL to fail validation.");
 
 		$validator = $failures[BookPeer::ISBN]->getValidator();
-		$this->assertType('ISBNValidator', $validator, "Expected validator that failed to be ISBNValidator");
+		$this->assertInstanceOf('ISBNValidator', $validator, "Expected validator that failed to be ISBNValidator");
 	}
 
 	protected function assertSingleValidation($ret, $expectedMsg)

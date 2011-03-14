@@ -21,7 +21,7 @@
  * @author     Hans Lellelid <hans@xmpl.org> (Propel)
  * @author     John D. McNally <jmcnally@collab.net> (Torque)
  * @author     Daniel Rall <dlr@finemaltcoding.com> (Torque)
- * @version    $Revision: 1938 $
+ * @version    $Revision: 2168 $
  * @package    propel.runtime.map
  */
 class TableMap
@@ -493,7 +493,7 @@ class TableMap
    * 
    * @param      string $name The relation name
    * @param      string $tablePhpName The related table name
-   * @param      integer $type The relation type (either RelationMap::MANY_TO_ONE, RelationMap::ONE_TO_MANY, or RelationMAp::ONE_TO_ONE) 
+   * @param      integer $type The relation type (either RelationMap::MANY_TO_ONE, RelationMap::ONE_TO_MANY, or RelationMAp::ONE_TO_ONE)
    * @param      array $columnMapping An associative array mapping column names (local => foreign)
    * @return     RelationMap the built RelationMap object
    */

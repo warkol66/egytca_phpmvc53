@@ -15,7 +15,7 @@ require_once dirname(__FILE__) . '/../../../tools/helpers/bookstore/BookstoreTes
  *
  * @author     <a href="mailto:celkins@scardini.com">Christopher Elkins</a>
  * @author     <a href="mailto:sam@neurogrid.com">Sam Joseph</a>
- * @version    $Id: CriteriaTest.php 2090 2010-12-13 22:37:03Z francois $
+ * @version    $Id: CriteriaTest.php 2168 2011-01-20 15:07:57Z francois $
  * @package    runtime.query
  */
 class CriteriaTest extends BookstoreTestBase
@@ -885,7 +885,7 @@ class CriteriaTest extends BookstoreTestBase
    */
   public function testAliasInCriterion()
   {
-    $c = new Criteria(); 
+    $c = new Criteria();
     $c->addAsColumn("column_alias", "tbl.COL1");
     $crit = $c->getNewCriterion("column_alias", "FOO");
     $this->assertNull($crit->getTable());

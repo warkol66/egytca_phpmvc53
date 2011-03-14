@@ -18,7 +18,7 @@ require_once dirname(__FILE__) . '/../model/PropelTypes.php';
  * Default implementation for the Platform interface.
  *
  * @author     Martin Poeschl <mpoeschl@marmot.at> (Torque)
- * @version    $Revision: 2090 $
+ * @version    $Revision: 2194 $
  * @package    propel.generator.platform
  */
 class DefaultPlatform implements PropelPlatformInterface
@@ -363,11 +363,12 @@ DROP TABLE " . $this->quoteIdentifier($table->getName()) . ";
 			if ($defaultValue->isExpression()) {
 				$default .= $defaultValue->getValue();
 			} else {
-				
 				if ($col->isTextType()) {
 					$default .= $this->quote($defaultValue->getValue());
 				} elseif ($col->getType() == PropelTypes::BOOLEAN || $col->getType() == PropelTypes::BOOLEAN_EMU) {
 					$default .= $this->getBooleanString($defaultValue->getValue());
+				} elseif ($col->getType() == PropelTypes::ENUM) {
+					$default .= array_search($defaultValue->getValue(), $col->getValueSet());
 				} else {
 					$default .= $defaultValue->getValue();
 				}
@@ -555,6 +556,9 @@ DROP INDEX %s;
 	 */
 	public function getAddForeignKeyDDL(ForeignKey $fk)
 	{
+		if ($fk->isSkipSql()) {
+			return;
+		}
 		$pattern = "
 ALTER TABLE %s ADD %s;
 ";
@@ -572,6 +576,9 @@ ALTER TABLE %s ADD %s;
 	 */
 	public function getDropForeignKeyDDL(ForeignKey $fk)
 	{
+		if ($fk->isSkipSql()) {
+			return;
+		}
 		$pattern = "
 ALTER TABLE %s DROP CONSTRAINT %s;
 ";
@@ -587,6 +594,9 @@ ALTER TABLE %s DROP CONSTRAINT %s;
 	 */	
 	public function getForeignKeyDDL(ForeignKey $fk)
 	{
+		if ($fk->isSkipSql()) {
+			return;
+		}
 		$pattern = "CONSTRAINT %s
 	FOREIGN KEY (%s)
 	REFERENCES %s (%s)";

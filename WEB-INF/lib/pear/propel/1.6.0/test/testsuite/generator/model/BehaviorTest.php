@@ -18,7 +18,7 @@ require_once dirname(__FILE__) . '/../../../../generator/lib/behavior/Timestampa
  * Tests for Behavior class
  *
  * @author     <a href="mailto:mpoeschl@marmot.at>Martin Poeschl</a>
- * @version    $Revision: 2090 $
+ * @version    $Revision: 2221 $
  * @package    generator.model
  */
 class BehaviorTest extends PHPUnit_Framework_TestCase {
@@ -61,7 +61,7 @@ class BehaviorTest extends PHPUnit_Framework_TestCase {
     $this->assertEquals($b->getParameters(), array('foo' => 'bar', 'foo2' => 'bar2'), 'addParameter() adds a parameter from an associative array');
     $b->addParameter(array('name' => 'foo', 'value' => 'bar3'));
     $this->assertEquals($b->getParameters(), array('foo' => 'bar3', 'foo2' => 'bar2'), 'addParameter() changes a parameter from an associative array');
-    $this->assertEquals($b->getParameter('foo'), 'bar3', 'getParameter() retrieves a parameter value by name');   
+    $this->assertEquals($b->getParameter('foo'), 'bar3', 'getParameter() retrieves a parameter value by name');
     $b->setParameters(array('foo3' => 'bar3', 'foo4' => 'bar4'));
     $this->assertEquals($b->getParameters(), array('foo3' => 'bar3', 'foo4' => 'bar4'), 'setParameters() changes the whole parameter array');
   }
@@ -96,6 +96,23 @@ EOF;
 		$this->assertEquals(array('create_column' => 'created_on', 'update_column' => 'updated_on'), $behavior->getParameters(), 'XmlToAppData sets the behavior parameters correctly');
 	}
 
+  /**
+   * @expectedException InvalidArgumentException
+   */
+	public function testUnkownBehavior()
+	{
+		$xmlToAppData = new XmlToAppData();
+		$schema = <<<EOF
+<database name="test1">
+  <table name="table1">
+    <column name="id" type="INTEGER" primaryKey="true" />
+    <behavior name="foo" />
+  </table>
+</database>
+EOF;
+		$appData = $xmlToAppData->parseString($schema);
+	}
+
 	public function testModifyTable()
 	{
 		$xmlToAppData = new XmlToAppData();
@@ -118,7 +135,7 @@ EOF;
 		$xmlToAppData = new XmlToAppData();
 		$schema = <<<EOF
 <database name="test1">
-  <behavior name="foo" />
+  <behavior name="timestampable" />
   <table name="table1">
     <column name="id" type="INTEGER" primaryKey="true" />
   </table>
@@ -126,7 +143,7 @@ EOF;
 EOF;
 		$appData = $xmlToAppData->parseString($schema);
 		$table = $appData->getDatabase('test1')->getTable('table1');
-		$this->assertTrue(array_key_exists('foo', $table->getBehaviors()), 'A database behavior is automatically copied to all its table');
+		$this->assertTrue(array_key_exists('timestampable', $table->getBehaviors()), 'A database behavior is automatically copied to all its table');
 	}
   
   public function testGetColumnForParameter()

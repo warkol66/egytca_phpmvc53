@@ -99,7 +99,7 @@ EOF;
 EOF;
 		return array(array($schema));
 	}
-	
+
 	public function providerForTestGetAddTableDDLSimplePK()
 	{
 		$schema = <<<EOF
@@ -192,12 +192,12 @@ EOF;
 		$index2 = new Index('foo_index');
 		$index2->addColumn($column1);
 		$table->addIndex($index2);
-		
+
 		return array(
 			array($table)
 		);
 	}
-		
+
 	public function providerForTestGetIndexDDL()
 	{
 		$table = new Table('foo');
@@ -216,7 +216,7 @@ EOF;
 			array($index)
 		);
 	}
-	
+
 	public function providerForTestPrimaryKeyDDL()
 	{
 		$table = new Table('foo');
@@ -227,7 +227,7 @@ EOF;
 			array($table)
 		);
 	}
-	
+
 	public function providerForTestGetForeignKeyDDL()
 	{
 		$table1 = new Table('foo');
@@ -248,10 +248,20 @@ EOF;
 		);
 	}
 
+	public function providerForTestGetForeignKeySkipSqlDDL()
+	{
+		$arr = self::providerForTestGetForeignKeyDDL();
+		$fk = $arr[0][0];
+		$fk->setSkipSql(true);
+		return array(
+			array($fk)
+		);
+	}
+
 	public function providerForTestGetForeignKeysDDL()
 	{
 		$table1 = new Table('foo');
-		
+
 		$column1 = new Column('bar_id');
 		$column1->getDomain()->copy(new Domain('FOOTYPE'));
 		$table1->addColumn($column1);
@@ -259,13 +269,13 @@ EOF;
 		$column2 = new Column('id');
 		$column2->getDomain()->copy(new Domain('BARTYPE'));
 		$table2->addColumn($column2);
-		
+
 		$fk = new ForeignKey('foo_bar_FK');
 		$fk->setForeignTableCommonName('bar');
 		$fk->addReference($column1, $column2);
 		$fk->setOnDelete('CASCADE');
 		$table1->addForeignKey($fk);
-		
+
 		$column3 = new Column('baz_id');
 		$column3->getDomain()->copy(new Domain('BAZTYPE'));
 		$table1->addColumn($column3);
@@ -279,10 +289,10 @@ EOF;
 		$fk->addReference($column3, $column4);
 		$fk->setOnDelete('SETNULL');
 		$table1->addForeignKey($fk);
-		
+
 		return array(
 			array($table1)
 		);
 	}
-	
+
 }

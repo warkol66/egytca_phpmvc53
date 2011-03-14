@@ -18,7 +18,7 @@ require_once dirname(__FILE__) . '/../../../../../runtime/lib/Propel.php';
  * Tests for I18nBehavior class query modifier
  *
  * @author     François Zaninotto
- * @version    $Revision: 2132 $
+ * @version    $Revision: 2192 $
  * @package    generator.behavior.i18n
  */
 class I18nBehaviorQueryBuilderModifierTest extends PHPUnit_Framework_TestCase
@@ -235,13 +235,22 @@ EOF;
 			->findOne();
 		$this->assertEquals('fr_FR', $o2->getLocale());
 	}
+	
+	public function testJoinWithI18nAndLimitDoesNotThrowException()
+	{
+		$res = I18nBehaviorTest11Query::create()
+			->joinWithI18n('en_EN')
+			->limit(2)
+			->find();
+		$this->assertInstanceOf('PropelObjectCollection', $res);
+	}
 
 	// This is not a desired behavior, but there is no way to overcome it
 	// because if we don't issue a database query when the collection exists
 	// then there is no way to avoid duplicates when adding translations.
 	// use case:
 	// $o = new Object();
-	// $t1 = new Translation();	
+	// $t1 = new Translation();
 	// $o->setTranslation($t2, 'en_EN'); // this is what happens during joined hydration
 	// now the translation collection exists
 	// $t2 = $o->getTranslation('fr_FR'); // we MUST issue a query here

@@ -28,7 +28,7 @@ class PropelCollection extends ArrayObject implements Serializable
 {
 	protected $model = '';
 	protected $iterator;
-	protected $formatter; 
+	protected $formatter;
 	
 
 	// Generic Collection methods
@@ -354,6 +354,17 @@ class PropelCollection extends ArrayObject implements Serializable
 		return $this->iterator;
 	}
 	
+	/**
+	 * Clear the internal Iterator.
+	 * PHP 5.3 doesn't know how to free a PropelCollection object if it has an attached
+	 * Iterator, so this must be done manually to avoid memory leaks.
+	 * @see http://www.propelorm.org/ticket/1232
+	 */
+	public function clearIterator()
+	{
+		$this->iterator = null;
+	}
+	
 	// Propel collection methods
 	
 	/**
@@ -468,7 +479,7 @@ class PropelCollection extends ArrayObject implements Serializable
 		if (preg_match('/^to(\w+)$/', $name, $matches)) {
 			return $this->exportTo($matches[1]);
 		}
-		throw new PropelException('Call to undefined method: ' . $name); 
+		throw new PropelException('Call to undefined method: ' . $name);
 	} 
 	
 	/** 

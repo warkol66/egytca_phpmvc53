@@ -23,7 +23,7 @@ require_once dirname(__FILE__) . '/Behavior.php';
  * @author     Martin Poeschl<mpoeschl@marmot.at> (Torque)
  * @author     Daniel Rall<dlr@collab.net> (Torque)
  * @author     Byron Foster <byron_foster@yahoo.com> (Torque)
- * @version    $Revision: 2153 $
+ * @version    $Revision: 2173 $
  * @package    propel.generator.model
  */
 class Database extends ScopedElement
@@ -515,12 +515,37 @@ class Database extends ScopedElement
     return $this->tablePrefix;
   }
 
+	/**
+	 * Get the next behavior on all tables, ordered by behavior priority,
+	 * and skipping the ones that were already executed,
+	 * 
+	 * @return Behavior
+	 */
+	public function getNextTableBehavior()
+	{
+		// order the behaviors according to Behavior::$tableModificationOrder
+		$behaviors = array();
+		foreach ($this->getTables() as $table) {
+			foreach ($table->getBehaviors() as $behavior) {
+				if (!$behavior->isTableModified()) {
+					$behaviors[$behavior->getTableModificationOrder()][] = $behavior;
+				}
+			}
+		}
+		ksort($behaviors);
+		foreach ($behaviors as $behaviorList) {
+			foreach ($behaviorList as $behavior) {
+				return $behavior;
+			}
+		}
+	}
+	
 	public function doFinalInitialization()
 	{
 		// add the referrers for the foreign keys
 		$this->setupTableReferrers();
 		
-		// execute default behaviors
+		// add default behaviors to database
 		if($defaultBehaviors = $this->getBuildProperty('behaviorDefault')) {
 			// add generic behaviors from build.properties 
 			$defaultBehaviors = explode(',', $defaultBehaviors);
@@ -529,14 +554,15 @@ class Database extends ScopedElement
 			}
 		}
 		
-		// execute behavior database modifiers
+		// execute database behaviors
 		foreach ($this->getBehaviors() as $behavior) {
 			$behavior->modifyDatabase();
 		}
 		
-		// execute table behaviors (may add new tables)
-		foreach ($this->getTables() as $table) {
-			$table->applyBehaviors();
+		// execute table behaviors (may add new tables and new behaviors)
+		while ($behavior = $this->getNextTableBehavior()) {
+			$behavior->getTableModifier()->modifyTable();
+			$behavior->setTableModified(true);
 		}
 		
 		// do naming and heavy indexing
@@ -544,23 +570,6 @@ class Database extends ScopedElement
 			$table->doFinalInitialization();
 			// setup referrers again, since final initialization may have added columns
 			$table->setupReferrers(true);
-		}
-		
-		// Behaviors may have added behaviors of their own
-		// These behaviors must launch their modifyTable() method,
-		// Until there is no behavior left
-		$behaviorsLeft = true;
-		while ($behaviorsLeft) {
-			$behaviorsLeft = false;
-			foreach ($this->getTables() as $table) {
-				foreach ($table->getBehaviors() as $behavior) {
-					if (!$behavior->isTableModified()) {
-						$behavior->getTableModifier()->modifyTable();
-						$behavior->setTableModified(true);
-						$behaviorsLeft = true;
-					}
-				}
-			}
 		}
 	}
 	

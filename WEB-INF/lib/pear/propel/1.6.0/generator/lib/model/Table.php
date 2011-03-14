@@ -29,7 +29,7 @@ require_once dirname(__FILE__) . '/Behavior.php';
  * @author     John McNally <jmcnally@collab.net> (Torque)
  * @author     Daniel Rall <dlr@collab.net> (Torque)
  * @author     Byron Foster <byron_foster@yahoo.com> (Torque)
- * @version    $Revision: 2153 $
+ * @version    $Revision: 2202 $
  * @package    propel.generator.model
  */
 class Table extends ScopedElement implements IDMethod
@@ -522,7 +522,7 @@ class Table extends ScopedElement implements IDMethod
 	 * @param array $collectedIndexes The collected indexes
 	 */
 	protected function collectIndexedColumns($indexName, $columns, &$collectedIndexes)
-	{ 
+	{
 		/**
 		 * "If the table has a multiple-column index, any leftmost prefix of the
 		 * index can be used by the optimizer to find rows. For example, if you
@@ -729,10 +729,10 @@ class Table extends ScopedElement implements IDMethod
 	
 	public function adjustColumnPositions()
 	{
+		$this->columnList = array_values($this->columnList);
 		$columnCount = $this->getNumColumns();
-		$columnListKeys = array_keys($this->columnList);
 		for ($i=0; $i < $columnCount; $i++) {
-			$this->columnList[$columnListKeys[$i]]->setPosition($i + 1);
+			$this->columnList[$i]->setPosition($i + 1);
 		}
 	}
 	
@@ -765,6 +765,20 @@ class Table extends ScopedElement implements IDMethod
 			$validator->setTable($this);
 			$validator->loadFromXML($data);
 			return $this->addValidator($validator);
+		}
+	}
+	
+	/**
+	 * Removes validators based on a column name
+	 *
+	 * @param string the name of the column bearing a validator
+	 */
+	public function removeValidatorForColumn($columnName)
+	{
+		foreach ($this->validatorList as $key => $validator) {
+			if ($validator->getColumnName() == $columnName) {
+				unset($this->validatorList[$key]);
+			}
 		}
 	}
 

@@ -15,7 +15,7 @@ require_once dirname(__FILE__) . '/../../../../generator/lib/model/VendorInfo.ph
 
 /**
  *
- * @package    generator.platform 
+ * @package    generator.platform
  */
 class OraclePlatformMigrationTest extends PlatformMigrationTestProvider
 {
@@ -70,7 +70,7 @@ CREATE SEQUENCE foo5_SEQ
 ";
 		$this->assertEquals($expected, $this->getPlatform()->getModifyDatabaseDDL($databaseDiff));
 	}
-	
+
 	/**
 	 * @dataProvider providerForTestGetRenameTableDDL
 	 */
@@ -117,7 +117,7 @@ ALTER TABLE foo ADD CONSTRAINT foo1_FK_1
 ";
 		$this->assertEquals($expected, $this->getPlatform()->getModifyTableDDL($tableDiff));
 	}
-	
+
 	/**
 	 * @dataProvider providerForTestGetModifyTableColumnsDDL
 	 */
@@ -151,7 +151,7 @@ ALTER TABLE foo ADD CONSTRAINT foo_PK PRIMARY KEY (id,bar);
 ";
 		$this->assertEquals($expected, $this->getPlatform()->getModifyTablePrimaryKeyDDL($tableDiff));
 	}
-	
+
 	/**
 	 * @dataProvider providerForTestGetModifyTableIndicesDDL
 	 */
@@ -187,7 +187,34 @@ ALTER TABLE foo1 ADD CONSTRAINT foo1_FK_2
 ";
 		$this->assertEquals($expected, $this->getPlatform()->getModifyTableForeignKeysDDL($tableDiff));
 	}
-	
+
+	/**
+	 * @dataProvider providerForTestGetModifyTableForeignKeysSkipSqlDDL
+	 */
+	public function testGetModifyTableForeignKeysSkipSqlDDL($tableDiff)
+	{
+		$expected = "
+ALTER TABLE foo1 DROP CONSTRAINT foo1_FK_1;
+";
+		$this->assertEquals($expected, $this->getPlatform()->getModifyTableForeignKeysDDL($tableDiff));
+		$expected = "
+ALTER TABLE foo1 ADD CONSTRAINT foo1_FK_1
+	FOREIGN KEY (bar) REFERENCES foo2 (bar);
+";
+		$this->assertEquals($expected, $this->getPlatform()->getModifyTableForeignKeysDDL($tableDiff->getReverseDiff()));
+	}
+
+	/**
+	 * @dataProvider providerForTestGetModifyTableForeignKeysSkipSql2DDL
+	 */
+	public function testGetModifyTableForeignKeysSkipSql2DDL($tableDiff)
+	{
+		$expected = '';
+		$this->assertEquals($expected, $this->getPlatform()->getModifyTableForeignKeysDDL($tableDiff));
+		$expected = '';
+		$this->assertEquals($expected, $this->getPlatform()->getModifyTableForeignKeysDDL($tableDiff->getReverseDiff()));
+	}
+
 	/**
 	 * @dataProvider providerForTestGetRemoveColumnDDL
 	 */
@@ -209,7 +236,7 @@ ALTER TABLE foo RENAME COLUMN bar1 TO bar2;
 ";
 		$this->assertEquals($expected, $this->getPlatform()->getRenameColumnDDL($fromColumn, $toColumn));
 	}
-	
+
 	/**
 	 * @dataProvider providerForTestGetModifyColumnDDL
 	 */
@@ -235,7 +262,7 @@ ALTER TABLE foo MODIFY
 ";
 		$this->assertEquals($expected, $this->getPlatform()->getModifyColumnsDDL($columnDiffs));
 	}
-	
+
 	/**
 	 * @dataProvider providerForTestGetAddColumnDDL
 	 */
@@ -261,4 +288,166 @@ ALTER TABLE foo ADD
 ";
 		$this->assertEquals($expected, $this->getPlatform()->getAddColumnsDDL($columns));
 	}
+
+	public function testGetModifyDatabaseWithBlockStorageDDL()
+	{
+		$schema1 = <<<EOF
+<database name="test">
+	<table name="foo1">
+		<column name="id" primaryKey="true" type="INTEGER" autoIncrement="true" />
+		<column name="blooopoo" type="INTEGER" />
+	</table>
+	<table name="foo2">
+		<column name="id" primaryKey="true" type="INTEGER" autoIncrement="true" />
+		<column name="bar" type="INTEGER" />
+		<column name="baz" type="VARCHAR" size="12" required="true" />
+	</table>
+	<table name="foo3">
+		<column name="id" primaryKey="true" type="INTEGER" autoIncrement="true" />
+		<column name="yipee" type="INTEGER" />
+	</table>
+</database>
+EOF;
+		$schema2 = <<<EOF
+<database name="test">
+	<table name="foo2">
+		<column name="id" primaryKey="true" type="INTEGER" autoIncrement="true" />
+		<column name="bar1" type="INTEGER" />
+		<column name="baz" type="VARCHAR" size="12" required="false" />
+		<column name="baz3" type="CLOB" />
+		<vendor type="oracle">
+			<parameter name="PCTFree" value="20"/>
+			<parameter name="InitTrans" value="4"/>
+			<parameter name="MinExtents" value="1"/>
+			<parameter name="MaxExtents" value="99"/>
+			<parameter name="PCTIncrease" value="0"/>
+			<parameter name="Tablespace" value="L_128K"/>
+			<parameter name="PKPCTFree" value="20"/>
+			<parameter name="PKInitTrans" value="4"/>
+			<parameter name="PKMinExtents" value="1"/>
+			<parameter name="PKMaxExtents" value="99"/>
+			<parameter name="PKPCTIncrease" value="0"/>
+			<parameter name="PKTablespace" value="IL_128K"/>
+		</vendor>
+	</table>
+	<table name="foo4">
+		<column name="id" primaryKey="true" type="INTEGER" autoIncrement="true" />
+		<column name="yipee" type="INTEGER" />
+		<vendor type="oracle">
+			<parameter name="PCTFree" value="20"/>
+			<parameter name="InitTrans" value="4"/>
+			<parameter name="MinExtents" value="1"/>
+			<parameter name="MaxExtents" value="99"/>
+			<parameter name="PCTIncrease" value="0"/>
+			<parameter name="Tablespace" value="L_128K"/>
+			<parameter name="PKPCTFree" value="20"/>
+			<parameter name="PKInitTrans" value="4"/>
+			<parameter name="PKMinExtents" value="1"/>
+			<parameter name="PKMaxExtents" value="99"/>
+			<parameter name="PKPCTIncrease" value="0"/>
+			<parameter name="PKTablespace" value="IL_128K"/>
+		</vendor>
+	</table>
+	<table name="foo5">
+		<column name="id" primaryKey="true" type="INTEGER" autoIncrement="true" />
+		<column name="lkdjfsh" type="INTEGER" />
+		<column name="dfgdsgf" type="CLOB" />
+		<index name="lkdjfsh_IDX">
+			<index-column name="lkdjfsh"/>
+			<vendor type="oracle">
+				<parameter name="PCTFree" value="20"/>
+				<parameter name="InitTrans" value="4"/>
+				<parameter name="MinExtents" value="1"/>
+				<parameter name="MaxExtents" value="99"/>
+				<parameter name="PCTIncrease" value="0"/>
+				<parameter name="Tablespace" value="L_128K"/>
+			</vendor>
+		</index>
+		<vendor type="oracle">
+			<parameter name="PCTFree" value="20"/>
+			<parameter name="InitTrans" value="4"/>
+			<parameter name="MinExtents" value="1"/>
+			<parameter name="MaxExtents" value="99"/>
+			<parameter name="PCTIncrease" value="0"/>
+			<parameter name="Tablespace" value="L_128K"/>
+			<parameter name="PKPCTFree" value="20"/>
+			<parameter name="PKInitTrans" value="4"/>
+			<parameter name="PKMinExtents" value="1"/>
+			<parameter name="PKMaxExtents" value="99"/>
+			<parameter name="PKPCTIncrease" value="0"/>
+			<parameter name="PKTablespace" value="IL_128K"/>
+		</vendor>
+	</table>
+</database>
+EOF;
+		$d1 = $this->getDatabaseFromSchema($schema1);
+		$d2 = $this->getDatabaseFromSchema($schema2);
+		$databaseDiff = PropelDatabaseComparator::computeDiff($d1, $d2);
+		$expected = "
+ALTER SESSION SET NLS_DATE_FORMAT='YYYY-MM-DD';
+ALTER SESSION SET NLS_TIMESTAMP_FORMAT='YYYY-MM-DD HH24:MI:SS';
+
+DROP TABLE foo1 CASCADE CONSTRAINTS;
+
+DROP SEQUENCE foo1_SEQ;
+
+ALTER TABLE foo3 RENAME TO foo4;
+
+ALTER TABLE foo2 RENAME COLUMN bar TO bar1;
+
+ALTER TABLE foo2 MODIFY
+(
+	baz NVARCHAR2(12)
+);
+
+ALTER TABLE foo2 ADD
+(
+	baz3 CLOB
+);
+
+CREATE TABLE foo5
+(
+	id NUMBER NOT NULL,
+	lkdjfsh NUMBER,
+	dfgdsgf CLOB
+)
+PCTFREE 20
+INITRANS 4
+STORAGE
+(
+	MINEXTENTS 1
+	MAXEXTENTS 99
+	PCTINCREASE 0
+)
+TABLESPACE L_128K;
+
+ALTER TABLE foo5 ADD CONSTRAINT foo5_PK PRIMARY KEY (id)
+USING INDEX
+PCTFREE 20
+INITRANS 4
+STORAGE
+(
+	MINEXTENTS 1
+	MAXEXTENTS 99
+	PCTINCREASE 0
+)
+TABLESPACE IL_128K;
+
+CREATE SEQUENCE foo5_SEQ
+	INCREMENT BY 1 START WITH 1 NOMAXVALUE NOCYCLE NOCACHE ORDER;
+
+CREATE INDEX lkdjfsh_IDX ON foo5 (lkdjfsh)
+PCTFREE 20
+INITRANS 4
+STORAGE
+(
+	MINEXTENTS 1
+	MAXEXTENTS 99
+	PCTINCREASE 0
+)
+TABLESPACE L_128K;
+";
+		$this->assertEquals($expected, $this->getPlatform()->getModifyDatabaseDDL($databaseDiff));
+	}
+
 }

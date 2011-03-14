@@ -17,7 +17,7 @@ require_once dirname(__FILE__) . '/Pluralizer.php';
  * @link http://blogs.msdn.com/dmitryr/archive/2007/01/11/simple-english-noun-pluralizer-in-c.aspx
  *
  * @author     paul.hanssen
- * @version    $Revision: 2088 $
+ * @version    $Revision: 2168 $
  * @package    propel.generator.builder.util
  */
 class StandardEnglishPluralizer implements Pluralizer
@@ -88,7 +88,7 @@ class StandardEnglishPluralizer implements Pluralizer
 		'rice',
 		'information',
 		'equipment'
-	);	
+	);
 	
 	/**
 	 * Generate a plural name based on the passed in root.
@@ -112,7 +112,7 @@ class StandardEnglishPluralizer implements Pluralizer
 				if (preg_match('/^[A-Z]/', $root)) {
 					$replacement = ucfirst($replacement);
 				}
-				return $replacement;				
+				return $replacement;
 			}
 		}
 
