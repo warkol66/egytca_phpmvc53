@@ -22,7 +22,7 @@ class MysqlPlatform extends DefaultPlatform
 {
 	
 	protected $tableEngineKeyword = 'ENGINE';
-	protected $defaultTableEngine = 'InnoDB';
+	protected $defaultTableEngine = 'MyISAM';
 	
 	/**
 	 * Initializes db specific domain mapping.
