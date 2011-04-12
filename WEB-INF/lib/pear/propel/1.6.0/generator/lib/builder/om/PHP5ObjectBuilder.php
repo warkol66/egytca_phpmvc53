@@ -1310,9 +1310,10 @@ abstract class ".$this->getClassname()." extends ".$parentClass." ";
 	 * @param      Column $col The current column.
 	 * @see        addMutatorOpen()
 	 **/
-	protected function addMutatorOpenBody(&$script, Column $col) {
+	protected function addMutatorOpenBody(&$script, Column $col)
+	{
 		$clo = strtolower($col->getName());
-				$cfc = $col->getPhpName();
+		$cfc = $col->getPhpName();
 		if ($col->isLazyLoad()) {
 			$script .= "
 		// explicitly set the is-loaded flag to true for this lazy load col;
@@ -1457,64 +1458,33 @@ abstract class ".$this->getClassname()." extends ".$parentClass." ";
 		if (!$dateTimeClass) {
 			$dateTimeClass = 'DateTime';
 		}
-		$this->declareClasses($dateTimeClass, 'DateTimeZone');
+		$this->declareClasses($dateTimeClass, 'DateTimeZone', 'PropelDateTime');
 
 		$this->addTemporalMutatorComment($script, $col);
 		$this->addMutatorOpenOpen($script, $col);
-		if ($col->isLazyLoad()) {
-			$script .= "
-		// explicitly set the is-loaded flag to true for this lazy load col;
-		// it doesn't matter if the value is actually set or not (logic below) as
-		// any attempt to set the value means that no db lookup should be performed
-		// when the get$cfc() method is called.
-		\$this->".$clo."_isLoaded = true;
-";
-		}
+		$this->addMutatorOpenBody($script, $col);
 
 		$fmt = var_export($this->getTemporalFormatter($col), true);
 
 		$script .= "
-		// we treat '' as NULL for temporal objects because DateTime('') == DateTime('now')
-		// -- which is unexpected, to say the least.
-		if (\$v === null || \$v === '') {
-			\$dt = null;
-		} elseif (\$v instanceof DateTime) {
-			\$dt = \$v;
-		} else {
-			// some string/numeric value passed; we normalize that so that we can
-			// validate it.
-			try {
-				if (is_numeric(\$v)) { // if it's a unix timestamp
-					\$dt = new $dateTimeClass('@'.\$v, new DateTimeZone('UTC'));
-					// We have to explicitly specify and then change the time zone because of a
-					// DateTime bug: http://bugs.php.net/bug.php?id=43003
-					\$dt->setTimeZone(new DateTimeZone(date_default_timezone_get()));
-				} else {
-					\$dt = new $dateTimeClass(\$v);
-				}
-			} catch (Exception \$x) {
-				throw new PropelException('Error parsing date/time value: ' . var_export(\$v, true), \$x);
-			}
-		}
-
-		if ( \$this->$clo !== null || \$dt !== null ) {
-			// (nested ifs are a little easier to read in this case)
-
-			\$currNorm = (\$this->$clo !== null && \$tmpDt = new $dateTimeClass(\$this->$clo)) ? \$tmpDt->format($fmt) : null;
-			\$newNorm = (\$dt !== null) ? \$dt->format($fmt) : null;
-
-			if ( (\$currNorm !== \$newNorm) // normalized values don't match ";
+		\$dt = PropelDateTime::newInstance(\$v, null, '$dateTimeClass');
+		if (\$this->$clo !== null || \$dt !== null) {
+			\$currentDateAsString = (\$this->$clo !== null && \$tmpDt = new $dateTimeClass(\$this->$clo)) ? \$tmpDt->format($fmt) : null;
+			\$newDateAsString = \$dt ? \$dt->format($fmt) : null;";
 
 		if (($def = $col->getDefaultValue()) !== null && !$def->isExpression()) {
 			$defaultValue = $this->getDefaultValueString($col);
 			$script .= "
-					|| (\$dt->format($fmt) === $defaultValue) // or the entered value matches the default";
+			if ( (\$currentDateAsString !== \$newDateAsString) // normalized values don't match 
+				|| (\$dt->format($fmt) === $defaultValue) // or the entered value matches the default
+				 ) {";
+		} else {
+			$script .= "
+			if (\$currentDateAsString !== \$newDateAsString) {";
 		}
 
 		$script .= "
-					)
-			{
-				\$this->$clo = (\$dt ? \$dt->format($fmt) : null);
+				\$this->$clo = \$newDateAsString;
 				\$this->modifiedColumns[] = ".$this->getColumnConstant($col).";
 			}
 		} // if either are not null
@@ -1531,8 +1501,8 @@ abstract class ".$this->getClassname()." extends ".$parentClass." ";
 	/**
 	 * Sets the value of [$clo] column to a normalized version of the date/time value specified.
 	 * ".$col->getDescription()."
-	 * @param      mixed \$v string, integer (timestamp), or DateTime value.  Empty string will
-	 *						be treated as NULL for temporal objects.
+	 * @param      mixed \$v string, integer (timestamp), or DateTime value.
+	 *               Empty strings are treated as NULL.
 	 * @return     ".$this->getObjectClassname()." The current object (for fluent API support)
 	 */";
 	}
@@ -1701,7 +1671,62 @@ abstract class ".$this->getClassname()." extends ".$parentClass." ";
 ";
 		$this->addMutatorClose($script, $col);
 	}
-	
+
+	/**
+	 * Adds setter method for boolean columns.
+	 * @param      string &$script The script will be modified in this method.
+	 * @param      Column $col The current column.
+	 * @see        parent::addColumnMutators()
+	 */
+	protected function addBooleanMutator(&$script, Column $col)
+	{
+		$clo = strtolower($col->getName());
+
+		$this->addBooleanMutatorComment($script, $col);
+		$this->addMutatorOpenOpen($script, $col);
+		$this->addMutatorOpenBody($script, $col);
+
+			$script .= "
+		if (\$v !== null) {
+			if (is_string(\$v)) {
+				\$v = in_array(strtolower(\$v), array('false', 'off', '-', 'no', 'n', '0')) ? false : true;
+			} else {
+				\$v = (boolean) \$v;
+			}
+		}
+";
+
+		$script .= "
+		if (\$this->$clo !== \$v";
+		if (($def = $col->getDefaultValue()) !== null && !$def->isExpression()) {
+			$script .= " || \$this->isNew()";
+		}
+		$script .= ") {
+			\$this->$clo = \$v;
+			\$this->modifiedColumns[] = ".$this->getColumnConstant($col).";
+		}
+";
+		$this->addMutatorClose($script, $col);
+	}
+
+	public function addBooleanMutatorComment(&$script, Column $col)
+	{
+		$cfc = $col->getPhpName();
+		$clo = strtolower($col->getName());
+
+		$script .= "
+	/**
+	 * Sets the value of the [$clo] column. 
+	 * Non-boolean arguments are converted using the following rules:
+	 *   * 1, '1', 'true',  'on',  and 'yes' are converted to boolean true
+	 *   * 0, '0', 'false', 'off', and 'no'  are converted to boolean false
+	 * Check on string values is case insensitive (so 'FaLsE' is seen as 'false').
+	 * ".$col->getDescription()."
+	 * @param      boolean|integer|string \$v The new value
+	 * @return     ".$this->getObjectClassname()." The current object (for fluent API support)
+	 */";
+	}
+		
 	/**
 	 * Adds setter method for "normal" columns.
 	 * @param      string &$script The script will be modified in this method.
@@ -1923,7 +1948,7 @@ abstract class ".$this->getClassname()." extends ".$parentClass." ";
 				\$this->ensureConsistency();
 			}
 
-			return \$startcol + $n; // $n = ".$this->getPeerClassname()."::NUM_COLUMNS - ".$this->getPeerClassname()."::NUM_LAZY_LOAD_COLUMNS).
+			return \$startcol + $n; // $n = ".$this->getPeerClassname()."::NUM_HYDRATE_COLUMNS.
 
 		} catch (Exception \$e) {
 			throw new PropelException(\"Error populating ".$this->getStubObjectBuilder()->getClassname()." object\", \$e);
@@ -4447,7 +4472,7 @@ abstract class ".$this->getClassname()." extends ".$parentClass." ";
 		foreach ($table->getColumns() as $col) {
 			if (!in_array($col, $autoIncCols, true)) {
 				$script .= "
-		\$copyObj->set".$col->getPhpName()."(\$this->".strtolower($col->getName()).");";
+		\$copyObj->set".$col->getPhpName()."(\$this->get".$col->getPhpName()."());";
 			}
 		} // foreach
 

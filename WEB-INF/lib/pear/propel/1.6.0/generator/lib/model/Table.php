@@ -29,7 +29,7 @@ require_once dirname(__FILE__) . '/Behavior.php';
  * @author     John McNally <jmcnally@collab.net> (Torque)
  * @author     Daniel Rall <dlr@collab.net> (Torque)
  * @author     Byron Foster <byron_foster@yahoo.com> (Torque)
- * @version    $Revision: 2202 $
+ * @version    $Revision: 2254 $
  * @package    propel.generator.model
  */
 class Table extends ScopedElement implements IDMethod
@@ -493,6 +493,7 @@ class Table extends ScopedElement implements IDMethod
 				$index = new Index();
 				$index->setName(sprintf('I_referenced_%s_%s', $foreignKey->getName(), ++$counter));
 				$index->setColumns($referencedColumns);
+				$index->resetColumnSize();
 				$this->addIndex($index);
 				// Add this new index to our collection, otherwise we might add it again (bug #725)
 				$this->collectIndexedColumns($index->getName(), $referencedColumns, $_indices);
@@ -508,6 +509,7 @@ class Table extends ScopedElement implements IDMethod
 				$index = new Index();
 				$index->setName(substr_replace($foreignKey->getName(), 'FI_',  strrpos($foreignKey->getName(), 'FK_'), 3));
 				$index->setColumns($localColumns);
+				$index->resetColumnSize();
 				$this->addIndex($index);
 				$this->collectIndexedColumns($index->getName(), $localColumns, $_indices);
 			}
@@ -1252,10 +1254,16 @@ class Table extends ScopedElement implements IDMethod
 
 	/**
 	 * Get the value of the namespace.
-	 * @return     value of namespace.
+	 *
+	 * @param     boolean $includeDatabaseNamespace Whether to complement the table namespace with the database namespace.
+	 *                                              Defaults to True.
+	 * @return    value of namespace.
 	 */
-	public function getNamespace()
+	public function getNamespace($includeDatabaseNamespace = true)
 	{
+		if (!$includeDatabaseNamespace) {
+			return $this->namespace;
+		}
 		if ($this->namespace && strpos($this->namespace, '\\') === 0) {
 			// absolute table namespace
 			return substr($this->namespace, 1);
@@ -1704,7 +1712,11 @@ class Table extends ScopedElement implements IDMethod
 		$doc = ($node instanceof DOMDocument) ? $node : $node->ownerDocument;
 
 		$tableNode = $node->appendChild($doc->createElement('table'));
-		$tableNode->setAttribute('name', $this->getName());
+		$tableNode->setAttribute('name', $this->getCommonName());
+
+		if ($this->getSchema() !== null) {
+			$tableNode->setAttribute('schema', $this->getSchema());
+		}
 
 		if ($this->phpName !== null) {
 			$tableNode->setAttribute('phpName', $this->phpName);
