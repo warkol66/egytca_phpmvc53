@@ -17,15 +17,18 @@
  * @param Smarty
  * @return string|null
  */
-function smarty_modifier_multilang_get_actionLabel_translation($action)
-{
+function smarty_modifier_multilang_get_actionLabel_translation($action) {
 
 	$languageCode = Common::getCurrentLanguageCode();
 
 	$translation = SecurityActionLabelPeer::getByActionAndLanguage($action,$languageCode);
 		
-	if (!empty($translation))
-		return $translation->getLabel();
+	if (!empty($translation)) {
+		$label = $translation->getLabel();
+		if (!empty($label))
+			return $label;
+	}
+
 	return $action;
 
 }
