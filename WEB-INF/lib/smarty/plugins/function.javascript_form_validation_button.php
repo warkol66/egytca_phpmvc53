@@ -23,6 +23,11 @@
  */
 function smarty_function_javascript_form_validation_button($params, &$smarty){
     
+	if (empty($params['id']))
+		$buttonId = 'submit_button';
+	else
+		$buttonId = $params['id'];
+
 	if (empty($params['name']))
 		$buttonName = 'submit_button';
 	else
@@ -38,7 +43,7 @@ function smarty_function_javascript_form_validation_button($params, &$smarty){
 	else
 		$buttonTitle = $params['title'];
 
-	$output = "<input type=\"button\" name=\"$buttonName\" value=\"$buttonValue\" title=\"$buttonTitle\" onClick=\"javascript:validationValidateFormClienSide(this.form);\" />";
+	$output = "<input type=\"button\" name=\"$buttonName\" id=\"$buttonId\" value=\"$buttonValue\" title=\"$buttonTitle\" onClick=\"javascript:validationValidateFormClienSide(this.form);\" />";
 
 	return $output;
 
