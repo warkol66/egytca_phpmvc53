@@ -854,6 +854,10 @@ class RequestProcessor {
 					$successForward->setName("success");
 					$successForward->setPath(ucwords($path).".tpl");
 					$newActionConfig->addForwardConfig($successForward);					
+					$successForward = new ForwardConfig();
+					$successForward->setName("failure");
+					$successForward->setPath("Error.tpl");
+					$newActionConfig->addForwardConfig($successForward);					
 				}
 				
 				$this->appConfig->addActionConfig($newActionConfig);
