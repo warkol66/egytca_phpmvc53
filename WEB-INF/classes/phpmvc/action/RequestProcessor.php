@@ -809,8 +809,11 @@ class RequestProcessor {
 				$forwardsRules["DoEdit"]["success-add"] = "/Main.php?do=MODULEEdit&message=ok";
 				$forwardsRules["DoEdit"]["success-edit"] = "/Main.php?do=MODULEEdit&message=ok";
 				$forwardsRules["DoEdit"]["failure"] = "MODULEEdit.tpl";
+				$forwardsRules["DoEdit"]["failure-edit"] = "MODULEEdit.tpl";
+				$forwardsRules["DoEdit"]["failure-error"] = "Error.tpl";
 				$forwardsRules["DoDelete"] = array();
-				$forwardsRules["DoDelete"]["success"] = "/Main.php?do=MODULEList&message=ok";		
+				$forwardsRules["DoDelete"]["success"] = "/Main.php?do=MODULEList&message=deleted_ok";		
+				$forwardsRules["DoDelete"]["failure"] = "/Main.php?do=MODULEList&message=not_deleted";		
 				
 				$action = str_replace($module,"",$path);
 				
@@ -857,7 +860,7 @@ class RequestProcessor {
 					$successForward = new ForwardConfig();
 					$successForward->setName("failure");
 					$successForward->setPath("Error.tpl");
-					$newActionConfig->addForwardConfig($successForward);					
+					$newActionConfig->addForwardConfig($successForward);
 				}
 				
 				$this->appConfig->addActionConfig($newActionConfig);
