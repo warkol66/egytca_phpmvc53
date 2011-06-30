@@ -658,7 +658,7 @@
 					}
 				}
 				$this->ffmpeg_info = $data;
-			}
+//			}
 // 			fclose($handle);
 // 			if(is_file($info_file))
 // 			{

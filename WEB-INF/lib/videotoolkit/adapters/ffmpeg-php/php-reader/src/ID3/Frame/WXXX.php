@@ -148,7 +148,7 @@ final class ID3_Frame_WXXX extends ID3_Frame_AbstractLink
       $data .= Transform::toString16BE($this->_description) . "\0\0";
       break;
     case self::UTF16LE:
-      $data .= Transform::toString16LE($this->_description) . "\0\0");
+      $data .= Transform::toString16LE($this->_description) . "\0\0";
       break;
     default:
       $data .= $this->_description . "\0";

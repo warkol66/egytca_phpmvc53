@@ -100,7 +100,7 @@ final class ID3_Frame_RVA2 extends ID3_Frame
         ("channelType" => Transform::fromInt8($this->_data[$j++]),
          "volumeAdjustment" =>
            Transform::fromInt16BE(substr($this->_data, $j++, 2)));
-      $bitsInPeak = Transform::fromInt8($this->_data[(++$j)++]);
+      $bitsInPeak = Transform::fromInt8($this->_data[$j++]);
       $bytesInPeak = $bitsInPeak > 0 ? ceil($bitsInPeak / 8) : 0;
       switch ($bytesInPeak) {
       case 8:
