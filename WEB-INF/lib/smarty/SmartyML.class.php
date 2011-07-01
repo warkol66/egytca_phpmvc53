@@ -183,7 +183,9 @@
           return true;
         }
       }
-	  require_once("multilang/classes/MultilangLanguagePeer.php");
+
+			if (!class_exists("MultilangLanguagePeer"))
+				require_once("multilang/classes/MultilangLanguagePeer.php");
       $texts = MultilangTextPeer::getByLanguage($language);
       $this->_translationTable[$language][$path] = Array();
       $this->_loadedTranslationTables[$language][] = $path;
