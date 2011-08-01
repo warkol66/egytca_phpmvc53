@@ -7,14 +7,14 @@
 
 
 /**
- * Smarty {popup} function plugin
+ * Smarty {js_char_counter} function plugin
  *
  * Type:     function<br>
- * Name:     popup<br>
- * Purpose:  make text pop up in windows via overlib
- * @link http://smarty.php.net/manual/en/language.function.popup.php {popup}
- *          (Smarty online manual)
- * @author   Monte Ohrt <monte at ohrt dot com>
+ * Name:     js_char_counter<br>
+ * Purpose:  use the textCounter
+ * Example:
+ * |-js_char_counter object=$issue columnName="name" fieldName="params[name]" idRemaining="remaining" sizeRemaining="3" classRemaining="charCount"-|
+ * @author   Egytca
  * @param array
  * @param Smarty
  * @return string
@@ -50,12 +50,6 @@ function smarty_function_js_char_counter($params, &$smarty)
 
 	$retval = "<input type=\"text\" disabled=\"disabled\" id=\"$idRemaining\" size=\"$sizeRemaining\" value=\"0\" title=\"$title\" alt=\"$title\" class=\"$classRemaining\" />\n";
 	$retval.= "<script type=\"text/javascript\">var $idRemaining" . "charCount = new TextCounter('$fieldName', '$idRemaining', $textSize)</script>\n";
-	
 
-
-  return $retval;
+	return $retval;
 }
-
-/* vim: set expandtab: */
-
-?>
