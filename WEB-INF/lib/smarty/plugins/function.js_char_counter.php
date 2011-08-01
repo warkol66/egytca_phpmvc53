@@ -13,7 +13,7 @@
  * Name:     js_char_counter<br>
  * Purpose:  use the textCounter
  * Example:
- * |-js_char_counter object=$issue columnName="name" fieldName="params[name]" idRemaining="remaining" sizeRemaining="3" classRemaining="charCount" showHide=1-|
+ * |-js_char_counter object=$issue columnName="name" fieldName="params[name]" idRemaining="remaining" sizeRemaining="3" classRemaining="charCount" showHide=1 useSpan=1-|
  * @author   Egytca
  * @param array
  * @param Smarty
@@ -57,7 +57,11 @@ function smarty_function_js_char_counter($params, &$smarty)
 		$showHide = "inline";
 	}
 
-	$retval.= "<input type=\"text\" disabled=\"disabled\" id=\"$idRemaining\" size=\"$sizeRemaining\" value=\"0\" title=\"$title\" alt=\"$title\" display=\"none\" class=\"$classRemaining\" />\n";
+	if ($params['useSpan'])
+		$retval.= "<span id=\"$idRemaining\" title=\"$title\" alt=\"$title\" class=\"$classRemaining\" /></span>\n";
+	else
+		$retval.= "<input type=\"text\" disabled=\"disabled\" id=\"$idRemaining\" size=\"$sizeRemaining\" value=\"0\" title=\"$title\" alt=\"$title\" class=\"$classRemaining\" />\n";
+
 	$retval.= "<script type=\"text/javascript\">var $idRemaining" . "charCount = new TextCounter('$fieldName', '$idRemaining', $textSize, '$showHide')</script>\n<br";
 
 	return $retval;
