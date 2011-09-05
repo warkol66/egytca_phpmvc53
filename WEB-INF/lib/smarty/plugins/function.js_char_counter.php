@@ -46,23 +46,22 @@ function smarty_function_js_char_counter($params, &$smarty)
 	else
 		$classRemaining = "charCount";
 
-	$title = $params['title'];
+	$title = $params['countetTitle'];
 
 	if ($params['showHide']) {
-		$retval = "onFocus=\"switch_vis('$idRemaining','inline')\" onBlur=\"switch_vis('$idRemaining','none')\" />";
+		$retval['pre'] = "onFocus=\"switch_vis('$idRemaining','inline')\" onBlur=\"switch_vis('$idRemaining','none')\"";
 		$showHide = "none";
 	}
-	else {
-		$retval = "/>";
+	else
 		$showHide = "inline";
-	}
 
 	if ($params['useSpan'])
-		$retval.= "<span id=\"$idRemaining\" title=\"$title\" alt=\"$title\" class=\"$classRemaining\" /></span>\n";
+		$retval['pos'] = "<span id=\"$idRemaining\" title=\"$title\" alt=\"$title\" class=\"$classRemaining\" /></span>\n";
 	else
-		$retval.= "<input type=\"text\" disabled=\"disabled\" id=\"$idRemaining\" size=\"$sizeRemaining\" value=\"0\" title=\"$title\" alt=\"$title\" class=\"$classRemaining\" />\n";
+		$retval['pos'] = "<input type=\"text\" disabled=\"disabled\" id=\"$idRemaining\" size=\"$sizeRemaining\" value=\"0\" title=\"$title\" alt=\"$title\" class=\"$classRemaining\" />\n";
 
-	$retval.= "<script type=\"text/javascript\">var $idRemaining" . "charCount = new TextCounter('$fieldName', '$idRemaining', $textSize, '$showHide')</script>\n<br";
+	$retval['pos'] .= "<script type=\"text/javascript\">var $idRemaining" . "charCount = new TextCounter('$fieldName', '$idRemaining', $textSize, '$showHide')</script>";
 
-	return $retval;
+	return $smarty->assign("Counter",$retval);
+
 }
