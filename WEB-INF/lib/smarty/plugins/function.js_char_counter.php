@@ -46,7 +46,7 @@ function smarty_function_js_char_counter($params, &$smarty)
 	else
 		$classRemaining = "charCount";
 
-	$title = $params['countetTitle'];
+	$title = $params['counterTitle'];
 
 	if ($params['showHide']) {
 		$retval['pre'] = "onFocus=\"switch_vis('$idRemaining','inline')\" onBlur=\"switch_vis('$idRemaining','none')\"";
@@ -60,7 +60,7 @@ function smarty_function_js_char_counter($params, &$smarty)
 	else
 		$retval['pos'] = "<input type=\"text\" disabled=\"disabled\" id=\"$idRemaining\" size=\"$sizeRemaining\" value=\"0\" title=\"$title\" alt=\"$title\" class=\"$classRemaining\" />\n";
 
-	$retval['pos'] .= "<script type=\"text/javascript\">var $idRemaining" . "charCount = new TextCounter('$fieldName', '$idRemaining', $textSize, '$showHide')</script>";
+	$retval['pos'] .= "<script type=\"text/javascript\">var $idRemaining" . "charCount = new TextCounter('$fieldName', '$idRemaining', $textSize, '$showHide');</script>";
 
 	return $smarty->assign("Counter",$retval);
 
