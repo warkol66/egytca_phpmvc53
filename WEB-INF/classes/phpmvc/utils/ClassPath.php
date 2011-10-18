@@ -95,30 +95,19 @@ class ClassPath {
 		// Setup the platform specific path delimiter character
 		$delim = NULL;	// path delimiter character. (Windows, Unix, Mac!!)
 		$winDir = NULL;
-		if( (int)phpversion() > 4 ) {
-			// PHP 5
-			$winDir = $_ENV["windir"];					// See: PHP v.4.1.0 Superglobals 
-		} else {
-			// PHP 4
-			global $HTTP_ENV_VARS;						// depreciated- 
-			if( array_key_exists("windir", $HTTP_ENV_VARS) ) {
-				$winDir = $HTTP_ENV_VARS["windir"];	// will be replaced with $_ENV
-			}
-		}
-
 
 		if($osType != '') {
-			if( preg_match("/WINDOWS/i", $osType) || preg_match("/WIN/i", PHP_OS)) {
+			if (stristr($osType,"WIN") || stristr(PHP_OS,"WIN")) {
 				$delim = ';';	// Windows
-			} elseif( preg_match("/UNIX/i", $osType) || preg_match("/LINUX/i", PHP_OS) ) {
+			} elseif(stristr($osType,"UNIX") || stristr(PHP_OS,"LINUX")) {
 				$delim = ':';	// Unix
-			} elseif( preg_match("/MAC/i", $osType) ) {
+			} elseif(stristr($osType,"MAC") || stristr(PHP_OS,"MAC")) {
 				$delim = ':';	// Mac !!!!!
 			}
 		}
 
 		if($delim == NULL) {
-			if( preg_match("/WIN/i", $winDir) ) { // _ENV["C:\\Win2K"]
+			if (stristr($osType,"WIN")) { // _ENV["C:\\Win2K"]
 			    $delim = ';';	// Windows
 			} else {
 				$delim = ':';	// Unix, Mac !!
@@ -267,32 +256,20 @@ class ClassPath {
 
 		// Setup the platform specific path delimiter character
 		$delim = NULL;	// path delimiter character. (Windows, Unix, Mac!!)
-		$winDir = NULL;
-		if( (int)phpversion() > 4 ) {
-			// PHP 5
-			if(!empty($_ENV["windir"]))
-				$winDir = $_ENV["windir"];					// See: PHP v.4.1.0 Superglobals 
-		} else {
-			// PHP 4
-			global $HTTP_ENV_VARS;						// depreciated- 
-			if( array_key_exists("windir", $HTTP_ENV_VARS) ) {
-				$winDir = $HTTP_ENV_VARS["windir"];	// will be replaced with $_ENV
-			}
-		}
 
-		if($osType != '') {
-			if( preg_match("/WINDOWS/i", $osType) ) {
+		if ($osType != '') {
+			if (stristr($osType,"WIN")) {
 				$delim = ';';	// Windows
-			} elseif( preg_match("/UNIX/i", $osType) ) {
+			} elseif(stristr($osType,"UNIX")) {
 				$delim = ':';	// Unix
-			} elseif( preg_match("/MAC/i", $osType) ) {
+			} elseif(stristr($osType,"MAC")) {
 				$delim = ':';	// Mac !!!!!
 			}
 		}
 
 		if($delim == NULL) {
-			if( preg_match("/WIN/i", $winDir) ) { // _ENV["C:\\Win2K"]
-			    $delim = ';';	// Windows
+			if (stristr($osType,"WIN")) { // _ENV["C:\\Win2K"]
+			  $delim = ';';	// Windows
 			} else {
 				$delim = ':';	// Unix, Mac !!
 			}
