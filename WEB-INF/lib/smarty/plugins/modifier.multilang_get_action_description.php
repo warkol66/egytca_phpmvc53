@@ -1,0 +1,34 @@
+<?php
+/**
+ * Smarty plugin
+ * @package Smarty
+ * @subpackage plugins
+ */
+
+
+/**
+ * Smarty {multilang__multilang_actionLabel_translation} modifier plugin
+ *
+ * Type:     function<br>
+ * Name:     multilang_get_text<br>
+ * Purpose:  Obtiene un texto en un idioma especifico
+ * @author Damian Martinelli
+ * @param array parameters
+ * @param Smarty
+ * @return string|null
+ */
+function smarty_modifier_multilang_get_action_description($action) {
+
+	$languageCode = Common::getCurrentLanguageCode();
+
+	$translation = SecurityActionLabelPeer::getByActionAndLanguage($action,$languageCode);
+		
+	if (!empty($translation)) {
+		$description = $translation->getDescription();
+		if (!empty($description))
+			return $description;
+	}
+
+	return $action;
+
+}
