@@ -15,7 +15,7 @@ function smarty_modifier_system_numeric_format($number,$decimals = null) {
 		
 		$thousandsSeparator = $system['config']['system']['parameters']['thousandsSeparator'];
 		$decimalSeparator = $system['config']['system']['parameters']['decimalSeparator'];
-		if (empty($decimals))
+		if (empty($decimals) && $decimals != "0")
 			$decimals = $system['config']['system']['parameters']['numberOfDecimals'];
 
 		return number_format($number,$decimals,$decimalSeparator,$thousandsSeparator);
